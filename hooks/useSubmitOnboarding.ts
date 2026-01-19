@@ -25,9 +25,6 @@ export function useSubmitOnboarding() {
       const email = user?.primaryEmailAddress?.emailAddress || 
                     user?.emailAddresses?.[0]?.emailAddress;
 
-      console.log("=== ONBOARDING SUBMISSION ===");
-      console.log("User ID:", userId);
-      console.log("Email extracted:", email);
 
       if (!email) {
         console.error("❌ No email found for user");
@@ -48,7 +45,6 @@ export function useSubmitOnboarding() {
         email: email || null,
       };
 
-      console.log("Form data prepared");
 
       // ✅ CHECK IF USER EXISTS FIRST (webhook might have created it)
       const { data: existingUser } = await supabase
@@ -61,7 +57,6 @@ export function useSubmitOnboarding() {
 
       if (existingUser) {
         // ✅ User exists (created by webhook) - UPDATE it
-        console.log("📝 User exists, updating with onboarding data...");
         
         result = await supabase
           .from("user_info")
@@ -71,7 +66,6 @@ export function useSubmitOnboarding() {
           .single();
       } else {
         // ✅ User doesn't exist - INSERT it
-        console.log("➕ User doesn't exist, creating new record...");
         
         result = await supabase
           .from("user_info")
@@ -90,7 +84,6 @@ export function useSubmitOnboarding() {
         };
       }
 
-      console.log("✅ User data saved successfully:", savedData);
 
       await Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success

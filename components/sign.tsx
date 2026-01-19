@@ -1,7 +1,8 @@
-import { useAuth, useOAuth, useSignIn, useSignUp, useSSO } from '@clerk/clerk-expo';
-import * as AuthSession from 'expo-auth-session';
+import { useAuth, useSignIn, useSignUp, useSSO } from '@clerk/clerk-expo';
+import * as AuthSession from "expo-auth-session";
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+
 import React, { useEffect, useState } from 'react';
 import {
   Image,
@@ -24,20 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 // Debug component
-function DebugAuthState() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
-  
-  useEffect(() => {
-    console.log('Auth UI State:', { 
-      isLoaded, 
-      isSignedIn, 
-      userId,
-      timestamp: new Date().toISOString() 
-    });
-  }, [isLoaded, isSignedIn, userId]);
 
-  return null;
-}
 
 export const useWarmUpBrowser = () => {
   useEffect(() => {
@@ -52,21 +40,26 @@ export const useWarmUpBrowser = () => {
 };
 
 
+
 const redirectUrl = AuthSession.makeRedirectUri({
   scheme: "aletheia",
   path: "auth",
 });
 
+
+
+
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 const MiraWelcomeScreen = () => {
+
   useWarmUpBrowser();
+  
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      console.log('User is signed in, navigating to home...');
       router.replace('/');
     }
   }, [isLoaded, isSignedIn]);
@@ -85,7 +78,7 @@ const MiraWelcomeScreen = () => {
   const [signUpPassword, setSignUpPassword] = useState('');
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState('');
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+
   // SSO (Google)
   const { startSSOFlow } = useSSO();
 
@@ -117,32 +110,50 @@ const MiraWelcomeScreen = () => {
     };
   });
 
-  // Google SSO
-const onGooglePress = async () => {
-  try {
-    const { createdSessionId, setActive } = await startOAuthFlow({
-      redirectUrl,
-      unsafeMetadata: {},
-    });
+  const onGooglePress = React.useCallback(async () => {
+    try {      
+      const { createdSessionId, signIn, signUp, setActive } = await startSSOFlow({
+        strategy: 'oauth_google',
+      });
+      // If we have a session, set it as active
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace('/');
+        return;
+      }
 
-    if (!createdSessionId) {
-      throw new Error("No session created");
+      // Handle transfer flow (if user needs to complete sign-in/sign-up)
+      if (signUp?.verifications?.externalAccount?.status === 'transferable') {
+        await signUp.create({ transfer: true });
+        await setActive?.({ session: signUp.createdSessionId });
+        router.replace('/');
+        return;
+      }
+
+      if (signIn?.firstFactorVerification?.status === 'transferable') {
+        await signIn.create({ transfer: true });
+        await setActive?.({ session: signIn.createdSessionId });
+        router.replace('/');
+        return;
+      }
+
+      
+    } catch (err: any) {
+      console.error('❌ Google OAuth failed:', err);
+      console.error('Error details:', {
+        message: err.message,
+        errors: err.errors,
+        clerkError: err.clerkError
+      });
     }
+  }, [startSSOFlow, router]);
 
-    await setActive!({ session: createdSessionId });
-    // 🚫 NO router.replace here
-    // auth state change will redirect automatically
-  } catch (err) {
-    console.error("Google OAuth failed", err);
-  }
-};
 
+  
 // Email Sign In
 const onSignInPress = async () => {
-  console.log('Email Sign In pressed');
   
   if (!signInLoaded) {
-    console.log('signIn not loaded');
     return;
   }
   
@@ -152,16 +163,10 @@ const onSignInPress = async () => {
       password,
     });
 
-    console.log('Sign in attempt:', { 
-      status: signInAttempt.status, 
-      sessionId: signInAttempt.createdSessionId,
-      supportedFirstFactors: signInAttempt.supportedFirstFactors
-    });
+   
 
     if (signInAttempt.status === 'complete') {
-      console.log('Setting active session...');
       await setSignInActive({ session: signInAttempt.createdSessionId });
-      console.log('Session set active, redirecting...');
       router.replace('/');
     } else {
       console.log('Sign in not complete - status:', signInAttempt.status);
@@ -173,15 +178,12 @@ const onSignInPress = async () => {
 
   // Email/Password Sign Up
   const onSignUpPress = async () => {
-    console.log('Sign Up pressed - signUpLoaded:', signUpLoaded, 'email:', signUpEmail);
     
     if (!signUpLoaded) {
-      console.log('signUp not loaded');
       return;
     }
     
     try {
-      console.log('Creating sign up...');
       await signUp.create({
         emailAddress: signUpEmail,
         password: signUpPassword,
@@ -189,7 +191,6 @@ const onSignInPress = async () => {
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
-      console.log('Verification email sent');
     } catch (err: any) {
       console.error('Sign up error:', JSON.stringify(err, null, 2));
       if (err.errors && err.errors.length > 0) {
@@ -200,36 +201,24 @@ const onSignInPress = async () => {
 
   // Email Verification
   const onVerifyPress = async () => {
-    console.log('Verify pressed - code:', code);
     
     if (!signUpLoaded) {
-      console.log('signUp not loaded');
       return;
     }
     
     try {
-      console.log('Verifying email...');
       const signUpAttempt = await signUp.attemptEmailAddressVerification({ code });
 
-      console.log('Verification result:', { 
-        status: signUpAttempt.status, 
-        createdSessionId: signUpAttempt.createdSessionId 
-      });
-
       if (signUpAttempt.status === 'complete') {
-        console.log('Verification complete, setting active session...');
         await setSignUpActive({ session: signUpAttempt.createdSessionId });
         
         setSignUpModalVisible(false);
         setPendingVerification(false);
-        console.log('Email verified and signed up, redirecting...');
         router.replace('/');
       } else {
-        console.error('Verification incomplete:', JSON.stringify(signUpAttempt, null, 2));
         alert(`Verification failed: ${JSON.stringify(signUpAttempt)}`);
       }
     } catch (err: any) {
-      console.error('Verification error:', JSON.stringify(err, null, 2));
       if (err.errors && err.errors.length > 0) {
         alert(err.errors[0].message);
       }
@@ -238,7 +227,6 @@ const onSignInPress = async () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-      <DebugAuthState />
       <View className="flex-1 p-4">
         {/* Animated Welcome */}
         <AnimatedView

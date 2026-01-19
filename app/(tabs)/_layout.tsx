@@ -18,11 +18,14 @@ export default function TabLayout() {
     setTab(getActiveTab());
   }, [pathname]);
 
-  const handleTabPress = (newTab: "home" | "summary" | "setting") => {
-    setTab(newTab);
-    router.push(`/${newTab}`);
-  };
-
+ // TabLayout.tsx
+const handleTabPress = (newTab: "home" | "summary" | "setting") => {
+  // ✅ Don't navigate if already on this tab
+  if (tab === newTab) return;
+  
+  setTab(newTab);
+  router.push(`/${newTab}`);
+};
   return (
     <>
       <Tabs screenOptions={{ tabBarStyle: { display: "none" }, headerShown: false, }}>

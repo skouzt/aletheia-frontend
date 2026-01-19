@@ -5,12 +5,13 @@ import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   ScrollView,
   StatusBar,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import {
   createAnimatedComponent,
@@ -42,8 +43,11 @@ const INTENSITY_MAP = [
   { emoji: '🙂', label: 'Okay' },            // 9
   { emoji: '😌', label: 'At ease' },         // 10
 ];
+
 /* -------------------- TYPES -------------------- */
 type SessionRow = {
+  id: string;
+  created_at: string;
   date: string;
   title: string;
   summary: string;
@@ -55,6 +59,59 @@ type JourneyPoint = {
   intensity: number;
 };
 
+/* -------------------- SAFE HELPERS -------------------- */
+// Safe date formatter - prevents crashes
+function safeFormatDate(dateInput: any, formatStr: string): string {
+  try {
+    if (!dateInput || dateInput === 'Invalid Date') {
+      return 'Date unavailable';
+    }
+    
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date:", dateInput);
+      return 'Invalid date';
+    }
+    
+    return format(date, formatStr);
+  } catch (error) {
+    console.error("Date format error:", error);
+    return 'Format error';
+  }
+}
+
+function encodeForUrl(text: string): string {
+  if (!text) return '';
+  return encodeURIComponent(text.replace(/\n/g, ' ').substring(0, 500));
+}
+
+// Safe intensity getter
+function getEmotionInfo(intensity: any) {
+  try {
+    const value = Math.min(10, Math.max(1, Math.round(Number(intensity) || 7)));
+    const map = INTENSITY_MAP[value - 1] || INTENSITY_MAP[6];
+    
+    let color = '#10B981'; // 1-3: Calm (green)
+    if (value >= 7) color = '#EF4444'; // 7-10: Intense (red)
+    else if (value >= 4) color = '#F59E0B'; // 4-6: Unsettled (amber)
+    
+    return {
+      emoji: map.emoji,
+      label: map.label,
+      color,
+    };
+  } catch (error) {
+    console.error("Intensity error:", error);
+    return {
+      emoji: '😐',
+      label: 'Neutral',
+      color: '#10B981',
+    };
+  }
+}
+
+
+
 /* -------------------- STATIC INSIGHTS -------------------- */
 const StaticInsights = memo(() => (
   <View className="px-4 py-4">
@@ -65,69 +122,116 @@ const StaticInsights = memo(() => (
       Insights from Aletheia
     </Text>
 
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingRight: 8 }}
+    >
       <View className="flex-row gap-4">
-        {/* Pattern Insight Card */}
-        <View className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm" style={{ width: 256 }}>
-          <View className="flex-row items-center gap-3 mb-4">
-            <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: '#D4E6E1' }}>
-              <MaterialCommunityIcons name="lightbulb-outline" size={20} color="#019863" />
+        
+        {/* -------- Patterns Noticed -------- */}
+        <View
+          className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex-col"
+          style={{ width: 256 }}
+        >
+          <View className="flex-row items-center gap-3 mb-3">
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: '#D8BFD8' }}
+            >
+              <MaterialCommunityIcons
+                name="lightbulb-outline"
+                size={20}
+                color="#fff"
+              />
             </View>
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+
+            <View>
+              <Text
+                className="text-base font-semibold text-text-light"
+                style={{ fontFamily: 'LibreCaslonText-Bold' }}
+              >
                 Patterns Noticed
               </Text>
-              <Text className="text-sm text-gray-500">Coming soon</Text>
+              <Text className="text-sm text-gray-500">
+                Coming soon
+              </Text>
             </View>
           </View>
 
           <Text className="text-sm text-text-light mb-4">
-            Aletheia will notice patterns in your sessions and provide insights to help you understand yourself better.
+            Aletheia will notice patterns in your sessions and help you
+            understand recurring emotional themes.
           </Text>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             disabled
-            className="h-10 px-4 rounded-lg items-center justify-center opacity-50" 
-            style={{ backgroundColor: 'rgba(1, 152, 99, 0.2)' }}
+            className="h-10 rounded-lg items-center justify-center mt-auto"
+            style={{ backgroundColor: 'rgba(1,152,99,0.2)' }}
           >
-            <Text className="text-sm font-bold" style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold' }}>
+            <Text
+              className="text-sm font-bold"
+              style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold' }}
+            >
               Coming Soon
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Key Takeaways Card */}
-        <View className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm" style={{ width: 256 }}>
-          <View className="flex-row items-center gap-3 mb-4">
-            <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: '#C8B6E2' }}>
-              <MaterialCommunityIcons name="key-outline" size={20} color="#fff" />
+        {/* -------- Key Takeaways -------- */}
+        <View
+          className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex-col"
+          style={{ width: 256 }}
+        >
+          <View className="flex-row items-center gap-3 mb-3">
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: '#FFDAB9' }}
+            >
+              <MaterialCommunityIcons
+                name="key-outline"
+                size={20}
+                color="#fff"
+              />
             </View>
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+
+            <View>
+              <Text
+                className="text-base font-semibold text-text-light"
+                style={{ fontFamily: 'LibreCaslonText-Bold' }}
+              >
                 Key Takeaways
               </Text>
-              <Text className="text-sm text-gray-500">Coming soon</Text>
+              <Text className="text-sm text-gray-500">
+                Coming soon
+              </Text>
             </View>
           </View>
 
           <Text className="text-sm text-text-light mb-4">
-            Important insights and breakthroughs from your therapy sessions will be highlighted here.
+            Important insights and breakthroughs from your sessions
+            will be summarized here.
           </Text>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             disabled
-            className="h-10 px-4 rounded-lg items-center justify-center opacity-50" 
-            style={{ backgroundColor: 'rgba(1, 152, 99, 0.2)' }}
+            className="h-10 rounded-lg items-center justify-center mt-auto"
+            style={{ backgroundColor: 'rgba(1,152,99,0.2)' }}
           >
-            <Text className="text-sm font-bold" style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold' }}>
+            <Text
+              className="text-sm font-bold"
+              style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold' }}
+            >
               Coming Soon
             </Text>
           </TouchableOpacity>
         </View>
+
       </View>
     </ScrollView>
   </View>
 ));
+
 
 /* -------------------- MAIN SCREEN -------------------- */
 export default function SessionSummariesScreen() {
@@ -156,26 +260,41 @@ export default function SessionSummariesScreen() {
 
   /* -------------------- DATA FETCH -------------------- */
   async function loadSessions(pageNumber = 0) {
-    if (!userId) return;
-
-    const from = pageNumber * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    const { data, error } = await supabase
-      .from('therapy_sessions')
-      .select('date, title, summary, session_intensity')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .range(from, to);
-
-    if (error) {
-      console.error(error);
+    
+    if (!userId) {
       setLoading(false);
       return;
     }
 
+    setLoading(true);
+
+    // Build query
+    let query = supabase
+      .from('therapy_sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    // Only add range for pagination (skip for first page)
+    if (pageNumber > 0) {
+      const from = pageNumber * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      query = query.range(from, to);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("❌ Supabase error:", error);
+      Alert.alert("Error", "Failed to load sessions");
+      setLoading(false);
+      return;
+    }
     if (!data || data.length === 0) {
-      if (pageNumber === 0) setHasSessions(false);
+      if (pageNumber === 0) {
+        setSessions([]);
+        setHasSessions(false);
+      }
       setHasMore(false);
       setLoading(false);
       return;
@@ -198,24 +317,29 @@ export default function SessionSummariesScreen() {
 
     const { data, error } = await supabase
       .from('therapy_sessions')
-      .select('date, session_intensity')
+      .select('session_intensity, created_at')
       .eq('user_id', userId)
-      .order('date', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (!error && data && data.length > 0) {
       setJourney(
         data.map(d => ({
-          date: d.date,
+          date: d.created_at,
           intensity: Number(d.session_intensity) || 1,
         }))
       );
     }
   }
 
-  useEffect(() => {
-    loadSessions();
-    loadJourney();
-  }, []);
+  useEffect(() => {    
+    if (userId) {
+      loadSessions(0);
+      loadJourney();
+    } else {
+      setLoading(false);
+      setHasSessions(false);
+    }
+  }, [userId]); // ✅ Add userId dependency
 
   /* -------------------- CHART PATH -------------------- */
   function intensityToY(intensity: number) {
@@ -223,9 +347,9 @@ export default function SessionSummariesScreen() {
   }
 
   const journeyPath = useMemo(() => {
-    if (journey.length < 2) return '';
+    if (!journey || journey.length < 2) return '';
 
-    const stepX = CHART_WIDTH / (journey.length - 1);
+    const stepX = CHART_WIDTH / Math.max(1, journey.length - 1);
 
     return journey
       .map((p, i) => {
@@ -236,174 +360,164 @@ export default function SessionSummariesScreen() {
       .join(' ');
   }, [journey]);
 
-  /* -------------------- HELPER: Get emotion info -------------------- */
-  function getEmotionInfo(intensity: number) {
-    // Clamp and normalize intensity to 1-10
-    const value = Math.min(10, Math.max(1, Math.round(Number(intensity) || 1)));
-    
-    // Get precise mapping
-    const map = INTENSITY_MAP[value - 1];
-    
-    // Determine color based on intensity ranges
-    let color = '#10B981'; // 1-3: Calm (green)
-    if (value >= 7) color = '#EF4444'; // 7-10: Intense (red)
-    else if (value >= 4) color = '#F59E0B'; // 4-6: Unsettled (amber)
-    
-    return {
-      emoji: map.emoji,
-      label: map.label,
-      color,
-    };
-  }
-
   /* -------------------- UI -------------------- */
   return (
-    <SafeAreaView className="flex-1 bg-background-light" edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+  <SafeAreaView className="flex-1 bg-background-light" edges={['top']}>
+    <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-center px-4 pb-2 border-b border-gray-200">
+    {/* 🔽 HEADER GOES HERE */}
+    <View className="sticky top-0 z-10 bg-background-light border-b border-gray-200 px-4 pt-3 pb-2">
+      <View className="flex-row items-center justify-between">
+        <View className="w-12 items-start">
+        </View>
+
         <Text
-          className="text-xl font-bold text-text-light text-center"
+          className="flex-1 text-center text-xl font-bold text-text-light"
           style={{ fontFamily: 'LibreCaslonText-Bold' }}
         >
           Summaries & Insights
         </Text>
+
+        <View className="w-12 items-end">
+        </View>
       </View>
+    </View>
 
-      <ScrollView className="flex-1 pb-24" showsVerticalScrollIndicator={false}>
-        
-        {/* Insights from Aletheia */}
-        <StaticInsights />
+    <ScrollView className="flex-1 pb-24" showsVerticalScrollIndicator={false}>
+      
+      {/* Debug Banner (remove in production) */}
+      
 
-        {/* Emotional Journey Chart */}
-        {journey.length > 0 && (
-          <View className="px-4 py-6">
-            <View className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-              <Text
-                className="text-lg font-semibold text-text-light mb-4"
-                style={{ fontFamily: 'LibreCaslonText-Bold' }}
-              >
-                Your Emotional Journey
-              </Text>
+      {/* Insights from Aletheia */}
+      <StaticInsights />
 
-              <View className="h-44 mb-4">
-                <Svg
-                  width="100%"
-                  height={CHART_HEIGHT}
-                  viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
-                  preserveAspectRatio="none"
-                >
-                  <Defs>
-                    <LinearGradient id="chartGradient" x1="236" y1="1" x2="236" y2={CHART_HEIGHT} gradientUnits="userSpaceOnUse">
-                      <Stop offset="0" stopColor="#AEC6CF" stopOpacity="0.4" />
-                      <Stop offset="1" stopColor="#AEC6CF" stopOpacity="0" />
-                    </LinearGradient>
-                  </Defs>
-
-                  <Path
-                    d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`}
-                    fill="url(#chartGradient)"
-                  />
-
-                  <AnimatedPath
-                    d={journeyPath}
-                    stroke="#AEC6CF"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    fill="none"
-                    strokeDasharray="1000"
-                    animatedProps={animatedProps}
-                  />
-                </Svg>
-              </View>
-
-              <View className="flex-row justify-around">
-                {journey.slice(-7).map((point, idx) => (
-                  <Text key={idx} className="text-xs font-bold text-gray-500">
-                    {format(new Date(point.date), 'EEE')}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Recent Sessions */}
-        {sessions.length > 0 && (
-          <View className="px-4 py-2 space-y-4 mb-4">
-            <Text
-              className="text-lg font-semibold text-text-light mb-3"
-              style={{ fontFamily: 'LibreCaslonText-Bold' }}
-            >
-              Recent Sessions
+      {/* Emotional Journey Chart - ONLY if ≥2 points */}
+      {journey.length >= 2 && (
+        <View className="px-4 py-6">
+          <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <Text className="text-lg font-semibold text-text-light mb-3">
+              Your Emotional Journey
             </Text>
 
-            {sessions.map((session, i) => {
-              const emotion = getEmotionInfo(Number(session.session_intensity));
-              const sessionDate = new Date(session.date);
+
+              <View className="min-h-[180px]">
+              <Svg
+                width="100%"
+                height={CHART_HEIGHT}
+                viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
+                preserveAspectRatio="none"
+              >
+                <Defs>
+                  <LinearGradient id="chartGradient" x1="236" y1="1" x2="236" y2={CHART_HEIGHT} gradientUnits="userSpaceOnUse">
+                    <Stop offset="0" stopColor="#AEC6CF" stopOpacity="0.4" />
+                    <Stop offset="1" stopColor="#AEC6CF" stopOpacity="0" />
+                  </LinearGradient>
+                </Defs>
+
+                <Path
+                  d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`}
+                  fill="url(#chartGradient)"
+                />
+
+                <AnimatedPath
+                  d={journeyPath}
+                  stroke="#AEC6CF"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                  strokeDasharray="1000"
+                  animatedProps={animatedProps}
+                />
+              </Svg>
+            </View>
+
+            <View className="flex-row justify-around mt-2">
+              {journey.slice(-7).map((p, i) => (
+                <Text key={i} className="text-xs font-bold text-gray-500">
+                  {safeFormatDate(p.date, 'EEE')}
+                </Text>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Recent Sessions */}
+      {sessions.length > 0 && (
+        <View className="px-4 py-2 space-y-4 mb-4">
+          <Text
+            className="text-lg font-semibold text-text-light mb-3"
+            style={{ fontFamily: 'LibreCaslonText-Bold' }}
+          >
+            Recent Sessions
+          </Text>
+
+          {sessions.map((session, i) => {
+            if (!session) {
+              return null;
+            }
+
+            try {
+              const emotion = getEmotionInfo(session.session_intensity);
+              const dateStr = session.created_at || session.date;
+              const sessionDate = new Date(dateStr);
+              
+              if (isNaN(sessionDate.getTime())) {
+                console.error("❌ Invalid date:", dateStr);
+                return (
+                  <View key={session.id} className="bg-red-100 p-4 m-4 rounded-xl">
+                    <Text className="text-red-600">Invalid session date</Text>
+                  </View>
+                );
+              }
 
               return (
-                <View
-                  key={`${session.date}-${i}`}
-                  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4"
-                >
+                <View key={session.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4">
                   <View className="flex-row justify-between items-start mb-3">
                     <View>
                       <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                        Session on {format(sessionDate, 'MMMM d, yyyy')}
+                        Session on {safeFormatDate(sessionDate, 'MMMM d, yyyy')}
                       </Text>
                       <Text className="text-sm text-gray-500">
-                        {format(sessionDate, 'h:mm a')}
+                        {safeFormatDate(sessionDate, 'h:mm a')}
                       </Text>
                     </View>
-                    <TouchableOpacity>
-                      <MaterialCommunityIcons name="dots-vertical" size={20} color="#666" />
-                    </TouchableOpacity>
                   </View>
 
-                  <Text
-                    className="text-base font-semibold text-text-light mb-2"
-                    style={{ fontFamily: 'LibreCaslonText-Bold' }}
-                  >
+                  <Text className="text-base font-semibold text-text-light mb-2" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
                     {session.title}
-                  </Text>
-
-                  <Text className="text-sm text-gray-500">
-                    {format(sessionDate, 'MMMM d, yyyy')}
                   </Text>
 
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2">
-                      {/* Single emoji + label */}
                       <Text style={{ fontSize: 26 }}>{emotion.emoji}</Text>
                       
-                      <View
-                        className="px-2 py-1 rounded-full"
-                        style={{ backgroundColor: `${emotion.color}22` }}
-                      >
-                        <Text
-                          className="text-sm font-medium"
-                          style={{ color: emotion.color }}
-                        >
+                      <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${emotion.color}22` }}>
+                        <Text className="text-sm font-medium" style={{ color: emotion.color }}>
                           {emotion.label}
                         </Text>
                       </View>
                     </View>
 
                     <TouchableOpacity
-                      style={{ flexShrink: 0 }}
                       className="flex-row items-center gap-2"
-                      onPress={() =>
-                        router.push({
-                          pathname: '/(expandleview)',
-                          params: {
-                            date: session.date,
-                            summary: session.summary,
-                            intensity: session.session_intensity,
-                          },
-                        })
-                      }
+                      onPress={() => {
+                        try {
+                          const params = {
+                            date: session.created_at || session.date,
+                            summary: encodeForUrl(session.summary),
+                            intensity: String(session.session_intensity),
+                          };
+                                                    
+                          router.push({
+                            pathname: '/(expandleview)',
+                            params,
+                          });
+                        } catch (error) {
+                          console.error("❌ Navigation error:", error);
+                          Alert.alert("Error", "Failed to open session details");
+                        }
+                      }}
                     >
                       <Text
                         numberOfLines={1}
@@ -423,50 +537,43 @@ export default function SessionSummariesScreen() {
                   </View>
                 </View>
               );
-            })}
+            } catch (error) {
+              console.error("❌ Session card render error:", error, session);
+              return (
+                <View key={`error-${i}`} className="bg-red-100 p-4 m-4 rounded-xl">
+                  <Text className="text-red-600">Error rendering session</Text>
+                  <Text className="text-xs text-red-500 mt-1">{String(error)}</Text>
+                </View>
+              );
+            }
+          })}
+        </View>
+      )}
 
-            {hasMore && (
-              <TouchableOpacity
-                onPress={() => loadSessions(page + 1)}
-                className="py-4 items-center"
-              >
-                <Text className="text-[#019863] font-semibold">
-                  Load more sessions
+      {/* Empty State */}
+      {hasSessions === false && !loading && (
+       <View className="px-4 py-10">
+              <View className="bg-white rounded-xl p-8 border border-dashed border-gray-300 items-center">
+                <MaterialCommunityIcons name="file-document-outline" size={48} color="#9CA3AF" />
+                <Text className="text-lg font-semibold text-text-light mt-4">
+                  No Sessions Yet
                 </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+                <Text className="text-sm text-gray-500 text-center mt-2 mb-6">
+                  Your first session summary and insights will appear here once you've completed a session.
+                </Text>
 
-        {/* Empty State */}
-        {hasSessions === false && !loading && (
-          <View className="px-4 py-10 mb-8">
-            <View className="bg-white rounded-xl p-8 border border-dashed border-gray-300 items-center">
-              <MaterialCommunityIcons name="file-document-outline" size={48} color="#9CA3AF" />
-              <Text
-                className="text-lg font-semibold text-text-light mt-4 text-center"
-                style={{ fontFamily: 'LibreCaslonText-Bold' }}
-              >
-                No Sessions Yet
-              </Text>
-              <Text className="text-sm text-gray-500 text-center mt-2 mb-6">
-                Your first session summary and insights from Aletheia will appear here once you've completed a session.
-              </Text>
-              <TouchableOpacity
-                  onPress={() => router.replace('/(tabs)/home')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Start your first session"
+                <TouchableOpacity
                   className="w-full h-12 rounded-xl items-center justify-center"
                   style={{ backgroundColor: '#019863' }}
                 >
-                <Text className="text-base font-bold text-white" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                  Start Your First Session
-                </Text>
-              </TouchableOpacity>
+                  <Text className="text-base font-bold text-white">
+                    Start Your First Session
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
+      )}
+    </ScrollView>
+  </SafeAreaView>
+);
 }

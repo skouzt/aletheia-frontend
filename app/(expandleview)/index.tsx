@@ -2,15 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
-    SlideInDown,
-    SlideOutDown,
+  Easing,
+  SlideInDown,
+  SlideOutDown
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ExpandViewScreen() {
   const router = useRouter();
+   const [isVisible, setIsVisible] = useState(true); 
   const { date, summary, intensity } = useLocalSearchParams<{
     date?: string;
     summary?: string;
@@ -22,15 +25,22 @@ export default function ExpandViewScreen() {
     10
   );
 
+  const handleClose = () => { // ✅ Add this
+    setIsVisible(false);
+    setTimeout(() => {
+      router.back();
+    }, 550);
+  };
+
   return (
-    <View className="flex-1 justify-end bg-black/40">
-      {/* Modal container */}
-      <Animated.View
-        entering={SlideInDown.duration(400)}
-        exiting={SlideOutDown.duration(250)}
-        className="rounded-t-[28px] overflow-hidden"
-        style={{ height: "92%" }}
-      >
+    <View className="flex-1 bg-white">
+      {isVisible && ( // ✅ Wrap with conditional
+        <Animated.View
+          entering={SlideInDown.duration(600).delay(50)}
+          exiting={SlideOutDown.duration(500).easing(Easing.in(Easing.ease))}
+          className="rounded-t-[28px] overflow-hidden"
+          style={{ height: "92%" }}
+        >
         {/* FULL gradient background */}
         <LinearGradient
           colors={["#EAF6F1", "#F6F8F7", "#FFFFFF"]}
@@ -39,12 +49,7 @@ export default function ExpandViewScreen() {
         >
           <SafeAreaView className="flex-1">
             {/* Drag handle */}
-            <View className="items-center py-2">
-              <View className="h-1.5 w-12 rounded-full bg-gray-300" />
-            </View>
-
-            {/* Header */}
-            <View className="px-5 pt-2 pb-4 flex-row justify-between items-start">
+            <View className="px-5 pt-6 pb-4 flex-row justify-between items-start">
               <View>
                 <Text
                   className="text-[28px] leading-tight text-[#0F172A]"
@@ -52,19 +57,17 @@ export default function ExpandViewScreen() {
                 >
                   Session{"\n"}Summary
                 </Text>
+
                 <Text className="text-sm text-[#019863] mt-1">
                   {date
-                    ? format(
-                        new Date(date),
-                        "MMMM d, yyyy • h:mm a"
-                      )
+                    ? format(new Date(date), "MMMM d, yyyy • h:mm a")
                     : ""}
                 </Text>
               </View>
 
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="w-9 h-9 rounded-full bg-black/5 items-center justify-center"
+              <TouchableOpacity 
+              onPress={handleClose}
+              className="w-10 h-10 rounded-full bg-white/60 items-center justify-center"
               >
                 <Ionicons name="close" size={20} />
               </TouchableOpacity>
@@ -146,10 +149,10 @@ export default function ExpandViewScreen() {
 
               {/* What We Discussed */}
               <View className="mb-6">
-                <View className="flex-row items-center gap-2 mb-3">
-                  <View className="w-2 h-2 bg-[#019863] rounded-full" />
+                <View className="flex-row items-center mb-3">
+                  <View className="w-2 h-2 bg-[#019863] rounded-full mr-2" />
                   <Text
-                    className="text-lg"
+                    className="text-lg flex-1"
                     style={{ fontFamily: "LibreCaslonText-Bold" }}
                   >
                     What We Discussed
@@ -173,6 +176,7 @@ export default function ExpandViewScreen() {
           </SafeAreaView>
         </LinearGradient>
       </Animated.View>
+          )}
     </View>
   );
 }

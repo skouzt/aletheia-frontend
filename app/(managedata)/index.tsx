@@ -4,18 +4,19 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
-    Alert,
-    Modal,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    SlideInDown,
-    SlideOutDown,
+  Easing,
+  SlideInDown,
+  SlideOutDown,
 } from "react-native-reanimated";
 
 export default function ManageDataScreen() {
@@ -26,13 +27,11 @@ export default function ManageDataScreen() {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  /* Exit animation → navigate */
-  useEffect(() => {
-    if (!visible) {
-      const t = setTimeout(() => router.back(), 300);
-      return () => clearTimeout(t);
-    }
-  }, [visible]);
+  // ✅ FIX: Add delayed close handler for exit animation
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(() => router.back(), 320); // Must be > 300ms exit duration
+  };
 
   async function clearHistory() {
     if (!userId) return;
@@ -42,21 +41,16 @@ export default function ManageDataScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      await supabase
-        .from("therapy_sessions")
-        .delete()
-        .eq("user_id", userId);
+      await supabase.from("therapy_sessions").delete().eq("user_id", userId);
 
-      await Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success
-      );
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       Alert.alert(
         "Session History Cleared",
         "Your past session summaries have been removed."
       );
 
-      setVisible(false);
+      handleClose(); // Use the new handler
     } catch {
       Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
@@ -68,26 +62,22 @@ export default function ManageDataScreen() {
     <View className="flex-1 justify-end bg-black/40">
       {visible && (
         <Animated.View
-          entering={SlideInDown.duration(400)}
-          exiting={SlideOutDown.duration(300)}
+          entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
+          exiting={SlideOutDown.duration(300).easing(Easing.in(Easing.ease))}
           className="rounded-t-[32px] overflow-hidden bg-[#F6F8F7]"
           style={{ height: "90%" }}
         >
           {/* ---------- HEADER ---------- */}
           <View className="relative pb-6 pt-2">
-            <LinearGradient
-              colors={["#EAF6F1", "#F6F8F7"]}
-              className="absolute top-0 left-0 right-0 h-full"
-            />
+            <LinearGradient colors={["#EAF6F1", "#F6F8F7"]} className="absolute top-0 left-0 right-0 h-full" />
 
-            {/* Drag Handle */}
             <View className="items-center pt-3 pb-4">
               <View className="h-1.5 w-12 rounded-full bg-gray-300/80" />
             </View>
 
             {/* Close */}
             <Pressable
-              onPress={() => setVisible(false)}
+              onPress={handleClose} // ✅ Use handleClose instead of direct setVisible(false)
               className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/70 items-center justify-center"
             >
               <Ionicons name="close" size={22} color="#374151" />
@@ -96,22 +86,15 @@ export default function ManageDataScreen() {
             {/* Title */}
             <View className="items-center px-6 mt-2">
               <View className="w-14 h-14 rounded-full bg-white items-center justify-center shadow-sm mb-4">
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={30}
-                  color="#019863"
-                />
+                <Ionicons name="shield-checkmark-outline" size={30} color="#019863" />
               </View>
 
-              <Text
-                className="text-3xl text-gray-900 mb-2"
-                style={{ fontFamily: "LibreCaslonText-Bold" }}
-              >
+              <Text className="text-3xl text-gray-900 mb-2 font-bold">
                 Manage Your Data
               </Text>
 
               <Text className="text-base text-gray-600 text-center max-w-xs">
-                You’re in control of your session history.
+                You're in control of your session history.
               </Text>
             </View>
           </View>
@@ -127,11 +110,7 @@ export default function ManageDataScreen() {
               <View className="gap-4">
                 <View>
                   <Text className="text-lg font-bold flex-row items-center gap-2 text-gray-900">
-                    <Ionicons
-                      name="time-outline"
-                      size={18}
-                      color="#D97706"
-                    />{" "}
+                    <Ionicons name="time-outline" size={18} color="#D97706" />{" "}
                     Clear Session History
                   </Text>
 
@@ -155,14 +134,9 @@ export default function ManageDataScreen() {
 
             {/* Reassurance */}
             <View className="flex-row gap-3 px-2">
-              <Ionicons
-                name="information-circle-outline"
-                size={18}
-                color="#019863"
-                style={{ marginTop: 2 }}
-              />
+              <Ionicons name="information-circle-outline" size={18} color="#019863" style={{ marginTop: 2 }} />
               <Text className="text-sm text-gray-500 leading-relaxed">
-                You’ll be asked to confirm before this action is completed.
+                You'll be asked to confirm before this action is completed.
                 No data is removed immediately.
               </Text>
             </View>
@@ -188,18 +162,14 @@ export default function ManageDataScreen() {
                 onPress={() => setConfirmVisible(false)}
                 className="flex-1 h-12 rounded-xl bg-gray-100 items-center justify-center"
               >
-                <Text className="font-semibold text-gray-700">
-                  Cancel
-                </Text>
+                <Text className="font-semibold text-gray-700">Cancel</Text>
               </Pressable>
 
               <Pressable
                 onPress={clearHistory}
                 className="flex-1 h-12 rounded-xl bg-[#019863] items-center justify-center"
               >
-                <Text className="font-semibold text-white">
-                  Confirm
-                </Text>
+                <Text className="font-semibold text-white">Confirm</Text>
               </Pressable>
             </View>
           </View>

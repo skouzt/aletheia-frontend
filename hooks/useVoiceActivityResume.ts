@@ -11,7 +11,6 @@ export function useVoiceActivityResume(room: Room | null, onResume: () => void, 
     const handleTrackMuted = (pub: any, participant: any) => {
       const track = pub?.track;
       if (track?.kind === 'audio' && track.isMuted === false) {
-        console.log('Audio activity detected while paused, triggering resume...');
         handleResume();
       }
     };

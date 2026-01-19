@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Aletheia",
-    "slug": "Aletheia",
+    "slug": "app",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "aletheia",
@@ -17,16 +17,17 @@
           "audio"
         ]
       },
-      "bundleIdentifier": "com.anonymous.app"
+      "bundleIdentifier": "com.aletheia.app"
     },
     "android": {
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-logo.png",
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.app",
+     "package": "com.aletheia.app",
       "permissions": [
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
@@ -60,10 +61,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splashscreen_logo.png",
+          "image": "./assets/images/app-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#f5f8f7",
           "dark": {
             "backgroundColor": "#000000"
           }

@@ -33,7 +33,7 @@ export default function SubscriptionEntry() {
           }}
         >
           <Image
-            source={require("@/assets/images/subscribe.gif")}
+            source={require("@/assets/images/subscribe1.gif")}
             style={{ width: 180, height: 180, marginBottom: 20 }}
             resizeMode="contain"
           />

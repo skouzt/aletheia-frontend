@@ -73,10 +73,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Microphone permission granted');
           return true;
         } else {
-          console.log('Microphone permission denied');
           Alert.alert(
             'Permission Required',
             'Microphone access is required for therapy sessions. Please enable it in your device settings.',
@@ -96,7 +94,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS !== 'web') {
       await AudioSession.startAudioSession();
     }
-    console.log('Audio session configured');
   }, []);
 
   const resetCallState = useCallback(() => {
@@ -111,7 +108,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cleanup = useCallback(() => {
-    console.log('Cleaning up resources...');
     setIsInCall(false);
     resetCallState();
     roomRef.current = null; // ⭐ Clear ref
@@ -119,7 +115,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const endCall = useCallback(async () => {
     try {
-      console.log('Ending Aletheia session...');
 
       if (roomRef.current) { // ⭐ Use ref instead of state
         try {
@@ -136,7 +131,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
 
       cleanup();
-      console.log('Session ended');
     } catch (err) {
       console.error('Error ending call:', err);
       setError('Error ending call');
@@ -148,14 +142,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     async (roomName: string, userId?: string) => {
       // ⭐ Check ref instead of state to avoid stale closure
       if (isConnecting || isInCall || roomRef.current) {
-        console.log('Call already in progress or room exists');
         return;
       }
 
       try {
         setIsConnecting(true);
         setError(null);
-        console.log('Starting Aletheia therapy session...');
 
         const hasPermission = await requestAudioPermissions();
         if (!hasPermission) {
@@ -169,13 +161,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         try {
           const health = await aletheiaApi.healthCheck();
           if (health.status === 'ok' || health.status === 'unknown') {
-            console.log('Backend health check passed');
           }
         } catch (healthError) {
           console.warn('Backend health check skipped');
         }
 
-        console.log('Connecting to Aletheia...');
         const authToken = await getToken({ template: "backend-api" });
 
         if (!authToken) {
@@ -188,16 +178,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           userId
         );
 
-        console.log('Session created');
-        console.log('Room URL:', connectionData.room_url.substring(0, 50) + '...');
-        console.log('Room Name:', connectionData.room_name);
-        console.log('Bot PID:', connectionData.bot_pid);
 
         const firstMsg =
           "Hey, I'm Aletheia. Think of me as a space where your thoughts can unfold and take shape. What's on your mind?";
         setAssistantMessage(firstMsg);
 
-        console.log('Initializing LiveKit...');
 
         const newRoom = new Room({
           adaptiveStream: true,
@@ -205,13 +190,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         });
 
         newRoom.on(RoomEvent.Connected, () => {
-          console.log('Connected to LiveKit room with Aletheia');
           setIsInCall(true);
           setIsConnecting(false);
         });
 
         newRoom.on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
-          console.log('Disconnected from Aletheia session:', reason || 'unknown');
           setIsInCall(false);
           cleanup();
         });
@@ -219,7 +202,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         newRoom.on(
           RoomEvent.ConnectionStateChanged,
           (state: ConnectionState) => {
-            console.log('Connection state changed:', state);
             if (state === ConnectionState.Disconnected) {
               setIsInCall(false);
               cleanup();
@@ -230,26 +212,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         newRoom.on(
           RoomEvent.ParticipantConnected,
           (participant: RemoteParticipant) => {
-            console.log('Participant connected:', participant.identity);
           }
         );
 
         newRoom.on(
           RoomEvent.ParticipantDisconnected,
           (participant: RemoteParticipant) => {
-            console.log('Participant disconnected:', participant.identity);
           }
         );
 
         newRoom.on(RoomEvent.AudioPlaybackStatusChanged, (playing: boolean) => {
-          console.log('Audio playback status:', playing);
         });
 
         newRoom.on(
           RoomEvent.TrackSubscribed,
           (track: Track, publication: any, participant: Participant) => {
             if (track.kind === Track.Kind.Audio && !participant.isLocal) {
-              console.log('Aletheia audio track subscribed');
             }
           }
         );
@@ -258,7 +236,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           RoomEvent.TrackUnsubscribed,
           (track: Track, publication: any, participant: Participant) => {
             if (track.kind === Track.Kind.Audio && !participant.isLocal) {
-              console.log('Aletheia audio track unsubscribed');
             }
           }
         );
@@ -268,13 +245,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           (payload: Uint8Array, participant?: RemoteParticipant, kind?: DataPacket_Kind) => {
             try {
               const messageStr = new TextDecoder().decode(payload);
-              console.log('RAW RECEIVED:', messageStr);
               const data = JSON.parse(messageStr);
-              console.log('PARSED:', data);
-              console.log('Data message received:', data.type);
 
               if (data.type === 'session_state_change') {
-                console.log('Session state update from backend:', data.state);
                 setSessionState(data.state);
                 return;
               }
@@ -282,10 +255,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               if (data.type === 'transcript') {
                 if (data.role === 'user') {
                   setTranscript(data.text);
-                  console.log('User:', data.text);
                 } else if (data.role === 'assistant') {
                   setAssistantMessage(data.text);
-                  console.log('Aletheia:', data.text);
                 }
               } else if (data.type === 'speaking') {
                 setIsSpeaking(data.speaking);
@@ -305,7 +276,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
         setRoomName(connectionData.room_name);
 
-        console.log('Connecting to LiveKit room...');
         await newRoom.connect(livekitUrl, livekitToken);
 
         // ⭐ Set both state and ref
@@ -316,7 +286,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setSessionState('active');
 
         await newRoom.localParticipant.setMicrophoneEnabled(true);
-        console.log('Call setup complete');
       } catch (err) {
         console.error('Error starting call:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to start call';
@@ -344,7 +313,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const newMutedState = !muted;
         await roomRef.current.localParticipant.setMicrophoneEnabled(!newMutedState);
         setMuted(newMutedState);
-        console.log('Muted:', newMutedState);
 
         const payload = JSON.stringify({ type: 'mute', muted: newMutedState });
         const encoder = new TextEncoder();
@@ -371,7 +339,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           { reliable: true }
         );
         
-        console.log('Session control sent:', action);
       } catch (err) {
         console.error('Error toggling session pause:', err);
       }
@@ -381,7 +348,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   // ⭐ FIXED: Proper unmount cleanup (only runs on unmount)
   useEffect(() => {
     return () => {
-      console.log('Component unmounting, cleaning up...');
       if (roomRef.current?.state === "connected") {
         roomRef.current.disconnect();
       }

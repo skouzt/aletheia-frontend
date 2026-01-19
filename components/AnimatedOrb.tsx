@@ -43,7 +43,6 @@ const injectedJS = `
   const interval = setInterval(() => {
     if (window.spline && resizeAndScale()) {
       clearInterval(interval);
-      console.log('Spline ready + scaled');
     }
     if (++attempts > 120) clearInterval(interval);
   }, 100);

@@ -37,14 +37,12 @@ export function useSubscription() {
   const fetchSubscription = useCallback(async () => {
     // Prevent duplicate concurrent requests
     if (isFetchingRef.current) {
-      console.log("Fetch skipped: already in progress");
       return;
     }
 
     // Rate limiting: minimum 5 seconds between requests
     const now = Date.now();
     if (now - lastFetchTimeRef.current < 5000 && isInitialCheckDoneRef.current) {
-      console.log("Fetch skipped: too soon");
       return;
     }
 

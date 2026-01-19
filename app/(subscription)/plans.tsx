@@ -16,8 +16,8 @@ import {
   View,
 } from "react-native";
 import Animated, {
-  SlideInDown,
-  SlideOutDown,
+  Easing,
+  SlideInDown
 } from "react-native-reanimated";
 
   type PlanType = "guided" | "extended";
@@ -59,6 +59,16 @@ const getPlanConfig = (plan: string) => {
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(false);
 
+
+
+const handleClose = () => {
+    // Trigger any cleanup if needed
+    setLoading(false);
+    setChecking(false);
+    
+    // Dismiss modal with native animation
+    router.dismiss();
+  };
 const handleCheckSubscription = async () => {
   if (!isLoaded || !isSignedIn) {
     Alert.alert("Error", "Please sign in first");
@@ -71,7 +81,6 @@ const handleCheckSubscription = async () => {
     const token = await getToken({ template: "backend-api" });
     if (!token) throw new Error("Auth failed");
 
-    console.log("Calling check-and-activate...");
 
     const checkRes = await fetch(
       `${API_URL}/api/v1/billing/check-and-activate`,
@@ -89,10 +98,8 @@ const handleCheckSubscription = async () => {
     }
 
     const result = await checkRes.json();
-    console.log("Check result:", result);
     
     if (result.found && (result.activated || result.already_activated)) {
-      console.log("✅ Subscription found, refreshing...");
       
       // ✅ IMPORTANT: Call refresh to update UI
       await refresh();
@@ -105,14 +112,12 @@ const handleCheckSubscription = async () => {
       Alert.alert(
         "✅ Subscription Found!",
         `Your ${PLAN_CONFIG[planKey].name} plan is now active. ${PLAN_CONFIG[planKey].dailyMinutes}.`,
-        [{ text: "Great!", onPress: () => router.back() }]
+        [{ text: "Great!",  onPress: () => router.dismiss()}]
       );
     } else if (result.already_activated) {
-      console.log("ℹ️ Subscription already activated");
       await refresh();
       Alert.alert("Already Active", "Your subscription is already active.");
     } else {
-      console.log("❌ No subscription found");
       Alert.alert(
         "No Subscription Found",
         "If you just purchased, please wait a moment and try again."
@@ -182,7 +187,6 @@ const handleCheckSubscription = async () => {
 
     setTimeout(async () => {
       try {
-        console.log("Checking for subscription activation...");
         
         const checkRes = await fetch(
           `${API_URL}/api/v1/billing/check-and-activate`,
@@ -197,7 +201,6 @@ const handleCheckSubscription = async () => {
 
         if (checkRes.ok) {
           const result = await checkRes.json();
-          console.log("Check result:", result);
           
           if (result.found && (result.activated || result.already_activated)) {
             await refresh();
@@ -214,12 +217,11 @@ const handleCheckSubscription = async () => {
               [
                 {
                   text: "Start Using",
-                  onPress: () => router.back(),
+                  onPress: () => router.dismiss(),
                 },
               ]
             );
           } else {
-            console.log("No subscription found");
             await refresh();
           }
         }
@@ -243,15 +245,13 @@ const handleCheckSubscription = async () => {
     return (
       <View className="flex-1 justify-end bg-black/40">
         <Animated.View
-          entering={SlideInDown.duration(400)}
-          exiting={SlideOutDown.duration(300)}
-          className="rounded-t-[32px] overflow-hidden bg-[#F5F8F7]"
-          style={{ height: "95%" }}
+          entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
+          className="rounded-t-[28px] overflow-hidden"      
         >
           {/* Close */}
           <View className="absolute top-6 right-4 z-20">
             <Pressable
-              onPress={() => router.back()}
+              onPress={handleClose}
               className="w-10 h-10 rounded-full bg-white/60 items-center justify-center"
             >
               <Ionicons name="close" size={22} color="#101816" />
@@ -358,6 +358,7 @@ const handleCheckSubscription = async () => {
 
           </View>
         </Animated.View>
+         
       </View>
     );
   }

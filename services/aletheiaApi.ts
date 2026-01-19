@@ -6,7 +6,7 @@
  */
 
 // Use your ngrok URL or local server
-export const API_URL = 'https://app-backend-production-cdd0.up.railway.app'; // ✅ REMOVE trailing space
+export const API_URL = 'https://aletheia-backend.site'; // ✅ REMOVE trailing space
 
 const API_BASE_URL = API_URL;
 
@@ -50,7 +50,6 @@ export const aletheiaApi = {
       throw new Error("Missing auth token for connect-livekit");
     }
 
-    console.log(`🚀 Connecting to Aletheia (LiveKit): ${url}`);
 
     const body = {
       room: roomName || `therapy-${Date.now()}`,
@@ -101,7 +100,6 @@ export const aletheiaApi = {
     try {
       const url = `${API_BASE_URL}/status/${botPid}`;
       
-      console.log(`🔍 Checking bot status: ${botPid}`);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -116,7 +114,6 @@ export const aletheiaApi = {
       }
 
       const data = await response.json();
-      console.log('✅ Bot status:', data);
       
       return data;
     } catch (error) {
@@ -196,7 +193,6 @@ export const aletheiaApi = {
    * Update the base URL (for switching between ngrok/local)
    */
   setBaseUrl(url: string): void {
-    console.log('🔗 API Base URL updated to:', url);
   }
 };
 

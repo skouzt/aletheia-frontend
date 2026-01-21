@@ -1,5 +1,4 @@
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
@@ -18,7 +17,6 @@ interface LiquidWaveVoiceButtonProps {
 export const LiquidWaveVoiceButton: React.FC<LiquidWaveVoiceButtonProps> = ({
   onPress,
 }) => {
-  const router = useRouter();
 
   /* -------- Press feedback -------- */
   const pressScale = useSharedValue(1);

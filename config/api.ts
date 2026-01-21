@@ -1,5 +1,5 @@
 // config/api.ts
-export const API_URL = 'https://aletheia-backend.site';
+export const API_URL = 'https://kayleigh-unblackened-eulah.ngrok-free.dev';
 
 // Add your API key here (get this from your backend .env file)
 export const API_KEY = ' my_secure_app_key_xyz123';

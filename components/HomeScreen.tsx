@@ -1,7 +1,6 @@
-import { useSubscription } from "@/hooks/useSubscription";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useMemo } from "react";
+import { router } from "expo-router";
+import React, { useEffect, useMemo } from "react";
 import { Image, Pressable, StatusBar, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -31,25 +30,12 @@ export default function HomeScreen() {
     []
   );
 
-  const { plan, loading, refresh } = useSubscription();
 
-  useFocusEffect(
-    useCallback(() => {
-      refresh();
-    }, [refresh])
-  );
+  
 
-  const hasActiveSubscription =
-    !loading && (plan === "guided" || plan === "extended");
+
 
   const handleStartSession = () => {
-    if (loading) return;
-
-    if (!hasActiveSubscription) {
-      router.push("/(modal)/paywall");
-      return;
-    }
-
     router.push("/(modal)");
   };
 

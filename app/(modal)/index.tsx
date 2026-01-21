@@ -2,30 +2,29 @@ import { apiFetch } from "@/api/client";
 import RememberOrb, { RememberOrbRef } from "@/components/AnimatedOrb";
 import { useCall } from "@/context/CallContext";
 import { useSessionController } from "@/hooks/useSessionController";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, useRouter } from "expo-router";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    cancelAnimation,
-    Easing,
-    FadeIn,
-    FadeOut,
-    SlideInDown,
-    SlideOutDown,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming,
+  cancelAnimation,
+  Easing,
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import { Dimensions } from "react-native";
@@ -139,17 +138,7 @@ function SessionControlContent() {
   const router = useRouter();
   const orbRef = useRef<RememberOrbRef>(null);
 
-  // ✅ Usage tracking
-  const {
-    canStartSession: hasMinutesRemaining,
-    minutesUsed,
-    minutesRemaining,
-    dailyLimit,
-    percentUsed,
-    startSession: startUsageTracking,
-    endSession: endUsageTracking,
-    loading: usageLoading,
-  } = useUsageTracking();
+ 
 
   const [isEnding, setIsEnding] = useState(false);
   const [backendReady, setBackendReady] = useState(false);
@@ -187,7 +176,7 @@ function SessionControlContent() {
         if (!token) return;
 
         const res = await apiFetch(
-          "https://aletheia-backend.site/session/start",
+          "https://kayleigh-unblackened-eulah.ngrok-free.dev/session/start",
           token,
           { method: "POST" }
         );
@@ -255,52 +244,17 @@ function SessionControlContent() {
     orbRef.current?.setAmplitude(0.2);
   }, [isInCall, isPaused, isSpeaking, isUserSpeaking]);
 
-  // ✅ Auto-end when limit reached
-  useEffect(() => {
-    if (isInCall && minutesRemaining <= 0) {
-      Alert.alert(
-        "Daily Limit Reached",
-        "You've reached your daily limit. Your session will end now.",
-        [{ text: "OK" }]
-      );
-      handleEndSession();
-    }
-  }, [isInCall, minutesRemaining]);
 
-  const handleStartSession = useCallback(async () => {
-    if (!backendReady) {
-      Alert.alert("Please wait", "Session is still initializing.");
-      return;
-    }
 
-    // ✅ Check usage limit
-    if (!hasMinutesRemaining) {
-      Alert.alert(
-        "Daily Limit Reached",
-        `You've used all ${dailyLimit} minutes today. Your limit resets at midnight UTC.`,
-        [
-          { text: "OK" },
-          { text: "Upgrade Plan", onPress: () => router.push("/(subscription)") }
-        ]
-      );
-      return;
-    }
+const handleStartSession = useCallback(async () => {
+  if (!backendReady) {
+    Alert.alert("Please wait", "Session is still initializing.");
+    return;
+  }
 
-    // ✅ Warn if close to limit
-    if (percentUsed >= 90) {
-      Alert.alert(
-        "Almost Out of Minutes",
-        `You have ${minutesRemaining} minutes remaining today. Continue?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Continue", onPress: () => proceedWithStart() }
-        ]
-      );
-      return;
-    }
+  await proceedWithStart();
+}, [backendReady]);
 
-    await proceedWithStart();
-  }, [backendReady, hasMinutesRemaining, percentUsed, minutesRemaining, dailyLimit]);
 
   const proceedWithStart = async () => {
     try {
@@ -327,7 +281,6 @@ function SessionControlContent() {
                 const r = await Audio.requestPermissionsAsync();
                 if (r.status === "granted") {
                   // ✅ Start tracking
-                  startUsageTracking();
                   await startCall(roomName);
                 }
               },
@@ -338,7 +291,6 @@ function SessionControlContent() {
       }
 
       // ✅ Start tracking
-      startUsageTracking();
       await startCall(roomName);
     } catch (err) {
       console.error("Start call failed:", err);
@@ -355,23 +307,17 @@ function SessionControlContent() {
       await endCall();
       
       // ✅ End tracking
-      const sessionMinutes = await endUsageTracking();
       
       await new Promise((r) => setTimeout(r, 1500));
       
-      // Show summary
-      Alert.alert(
-        "Session Complete",
-        `Session duration: ${sessionMinutes} minutes\n${minutesRemaining - sessionMinutes} minutes remaining today`,
-        [{ text: "OK", onPress: () => router.back() }]
-      );
+      
     } catch (err) {
       console.error("End session failed:", err);
       Alert.alert("Error", "Failed to end session.");
     } finally {
       setIsEnding(false);
     }
-  }, [isInCall, isEnding, endCall, endUsageTracking, minutesRemaining, router]);
+  }, [isInCall, isEnding, endCall, router]);
 
   const handlePauseResume = useCallback(() => {
     if (!isInCall || isConnecting || isEnding) return;
@@ -426,7 +372,6 @@ function SessionControlContent() {
     }
   };
 
-  const statusConfig = getStatusConfig();
 
   return (
     <View className="flex-1 justify-end bg-black/50">
@@ -445,14 +390,7 @@ function SessionControlContent() {
             Mindful Conversation
           </Text>
           
-          {/* ✅ Usage Display */}
-          {!usageLoading && dailyLimit > 0 && (
-            <View className="mt-3 px-4 py-2 rounded-full bg-[#E8F0ED]">
-              <Text className="text-xs text-[#2D3A3A]/70">
-                {minutesUsed} / {dailyLimit} min used • {minutesRemaining} min left
-              </Text>
-            </View>
-          )}
+          
         </View>
 
         {/* Main Content Area */}

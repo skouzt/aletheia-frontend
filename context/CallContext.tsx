@@ -298,7 +298,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     [
       isConnecting,
       isInCall,
-      // ⭐ REMOVED: room from dependencies
       requestAudioPermissions,
       configureAudioSession,
       cleanup,

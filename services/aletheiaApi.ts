@@ -6,7 +6,7 @@
  */
 
 // Use your ngrok URL or local server
-export const API_URL = 'https://kayleigh-unblackened-eulah.ngrok-free.dev'; // ✅ REMOVE trailing space
+export const API_URL = 'https://aletheia-backend.site'; // ✅ REMOVE trailing space
 
 const API_BASE_URL = API_URL;
 

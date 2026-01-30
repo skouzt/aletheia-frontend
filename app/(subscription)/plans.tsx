@@ -243,10 +243,12 @@ const handleCheckSubscription = async () => {
     const hasNoSubscription = currentPlan === "none";
   
     return (
-      <View className="flex-1 justify-end bg-black/40">
+   <View className="flex-1 justify-end bg-black/40 pt-safe">
+    
         <Animated.View
           entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
-          className="rounded-t-[28px] overflow-hidden"      
+          className="rounded-t-[28px] overflow-hidden bg-white"
+          style={{ top: 10 }}
         >
           {/* Close */}
           <View className="absolute top-6 right-4 z-20">
@@ -309,9 +311,7 @@ const handleCheckSubscription = async () => {
             </View>
           </ScrollView>
 
-          {/* CTA */}
-          {/* CTA */}
-<View className="absolute bottom-0 left-0 w-full bg-[#F5F8F7]/95 border-t border-gray-200/50 p-5 pb-8">
+<View className="absolute bottom-0 left-0 w-full p-5 pb-8">
   <Pressable
     onPress={handleUpgrade}
     disabled={loading || isCurrentPlan(selectedPlan)}
@@ -384,11 +384,14 @@ const handleCheckSubscription = async () => {
 
     return (
       <Pressable
-        onPress={disabled ? undefined : onPress}
-        className={`relative rounded-2xl bg-white p-5 ${
-          selected ? "border-2 border-[#019863]" : ""
-        } ${disabled ? "opacity-50" : ""}`}
-      >
+          onPress={disabled ? undefined : onPress}
+          className={`relative rounded-2xl bg-white p-5 border ${
+            selected
+              ? "border-2 border-[#019863]"
+              : "border-gray-200"
+          } ${disabled ? "opacity-50" : ""}`}
+        >
+
         {popular && (
           <View className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#019863] px-3 py-1 rounded-full">
             <Text className="text-white text-[10px] font-bold">

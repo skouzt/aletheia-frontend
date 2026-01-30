@@ -5,8 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "aletheia",
-    "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "updates": {
+      "enabled": false
+    },
     "icon": "./assets/images/app-logo.png",
     "ios": {
       "supportsTablet": true,
@@ -20,14 +22,13 @@
       "bundleIdentifier": "com.aletheia.app"
     },
     "android": {
-      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-logo.png",
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-     "package": "com.aletheia.app",
+      "package": "com.aletheia.app",
       "permissions": [
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
@@ -44,40 +45,39 @@
       "favicon": "./assets/images/app-logo.png"
     },
     "plugins": [
-      "expo-router",
-    
-      "@config-plugins/react-native-webrtc",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "minSdkVersion": 24
-          },
-          "ios": {
-            "deploymentTarget": "15.1"
-          }
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/app-logo.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#f5f8f7",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      [
-        "expo-av",
-        {
-          "microphonePermission": "This app needs access to your microphone for therapy sessions."
-        }
-      ],
-      "expo-secure-store"
-    ],
+  "expo-router",
+  "@config-plugins/react-native-webrtc",
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "minSdkVersion": 24
+      },
+      "ios": {
+        "deploymentTarget": "15.1"
+      }
+    }
+  ],
+  [
+    "expo-splash-screen",
+    {
+      "image": "./assets/images/app-logo.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#f5f8f7",
+      "dark": {
+        "backgroundColor": "#000000"
+      }
+    }
+  ],
+  [
+    "expo-av",
+    {
+      "microphonePermission": "This app needs access to your microphone for therapy sessions."
+    }
+  ],
+  "expo-secure-store"
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

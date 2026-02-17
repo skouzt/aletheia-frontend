@@ -119,7 +119,6 @@ export default function ExpandViewScreen() {
                 </View>
 
                 <View className="flex-row items-center gap-4">
-                  <Text style={{ fontSize: 30 }}>😥 😟</Text>
 
                   <View className="flex-1">
                     <View className="flex-row justify-between mb-2">

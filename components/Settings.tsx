@@ -149,7 +149,7 @@ export default function SettingsScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* Header (no back button now) */}
-      <View className="px-4 py-3 bg-background-light border-b border-gray-200/50">
+      <View className="px-4 py-3 bg-background-light ">
         <View className="flex-row items-center justify-center">
           <Text
             className="text-text-light text-lg font-bold "

@@ -1,16 +1,7 @@
 
 
-/**
- * Aletheia API Service - LIVEKIT VERSION
- * Connects React Native app to Aletheia therapy bot backend
- */
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// Use your ngrok URL or local server
-export const API_URL = 'https://aletheia-backend.site'; // ✅ REMOVE trailing space
-
-const API_BASE_URL = API_URL;
-
-// ✅ FIXED: Added 'token' property for backward compatibility
 interface ConnectionResponse {
   status: string;
   room_url: string;      // LiveKit WS URL (wss://...)
@@ -34,10 +25,7 @@ interface BotStatus {
 }
 
 export const aletheiaApi = {
-  /**
-   * Connect to Aletheia - creates a new LiveKit therapy session
-   * POST /connect-livekit
-   */
+  
   async connect(
   authToken: string,
   roomName?: string,
@@ -182,16 +170,8 @@ export const aletheiaApi = {
     }
   },
 
-  /**
-   * Get API base URL (for debugging)
-   */
-  getBaseUrl(): string {
-    return API_BASE_URL;
-  },
+ 
 
-  /**
-   * Update the base URL (for switching between ngrok/local)
-   */
   setBaseUrl(url: string): void {
   }
 };

@@ -7,6 +7,7 @@ import React, { memo, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  Image,
   ScrollView,
   StatusBar,
   Text,
@@ -24,7 +25,6 @@ import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
-/* -------------------- CONSTANTS -------------------- */
 const CHART_HEIGHT = 150;
 const CHART_WIDTH = 472;
 const PAGE_SIZE = 5;
@@ -32,19 +32,18 @@ const PAGE_SIZE = 5;
 const AnimatedPath = createAnimatedComponent(Path);
 
 const INTENSITY_MAP = [
-  { emoji: '😵‍💫', label: 'Too much' },      // 1
-  { emoji: '😰', label: 'Anxious' },         // 2
-  { emoji: '😥', label: 'Overwhelmed' },     // 3
-  { emoji: '😣', label: 'Strained' },        // 4
-  { emoji: '😟', label: 'Heavy' },           // 5
-  { emoji: '😕', label: 'Uneasy' },          // 6
-  { emoji: '😐', label: 'Neutral' },         // 7
-  { emoji: '😊', label: 'Light' },           // 8
-  { emoji: '🙂', label: 'Okay' },            // 9
-  { emoji: '😌', label: 'At ease' },         // 10
+  { label: 'Too much' },      
+  { label: 'Anxious' },        
+  { label: 'Overwhelmed' },     
+  { label: 'Strained' },       
+  { label: 'Heavy' },           
+  { label: 'Uneasy' },         
+  { label: 'Neutral' },         
+  { label: 'Light' },           
+  { label: 'Okay' },            
+  { label: 'At ease' },         
 ];
 
-/* -------------------- TYPES -------------------- */
 type SessionRow = {
   id: string;
   created_at: string;
@@ -59,8 +58,7 @@ type JourneyPoint = {
   intensity: number;
 };
 
-/* -------------------- SAFE HELPERS -------------------- */
-// Safe date formatter - prevents crashes
+
 function safeFormatDate(dateInput: any, formatStr: string): string {
   try {
     if (!dateInput || dateInput === 'Invalid Date') {
@@ -85,25 +83,22 @@ function encodeForUrl(text: string): string {
   return encodeURIComponent(text.replace(/\n/g, ' ').substring(0, 500));
 }
 
-// Safe intensity getter
 function getEmotionInfo(intensity: any) {
   try {
     const value = Math.min(10, Math.max(1, Math.round(Number(intensity) || 7)));
     const map = INTENSITY_MAP[value - 1] || INTENSITY_MAP[6];
     
-    let color = '#10B981'; // 1-3: Calm (green)
-    if (value >= 7) color = '#EF4444'; // 7-10: Intense (red)
-    else if (value >= 4) color = '#F59E0B'; // 4-6: Unsettled (amber)
+    let color = '#10B981'; 
+    if (value >= 7) color = '#EF4444'; 
+    else if (value >= 4) color = '#F59E0B'; 
     
     return {
-      emoji: map.emoji,
       label: map.label,
       color,
     };
   } catch (error) {
     console.error("Intensity error:", error);
     return {
-      emoji: '😐',
       label: 'Neutral',
       color: '#10B981',
     };
@@ -112,16 +107,14 @@ function getEmotionInfo(intensity: any) {
 
 
 
-/* -------------------- STATIC INSIGHTS -------------------- */
 const StaticInsights = memo(() => (
   <View className="px-4 py-4">
-    <Text
+     <Text
       className="text-lg font-semibold text-text-light mb-3"
       style={{ fontFamily: 'LibreCaslonText-Bold' }}
     >
       Insights from Aletheia
     </Text>
-
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -129,7 +122,6 @@ const StaticInsights = memo(() => (
     >
       <View className="flex-row gap-4">
         
-        {/* -------- Patterns Noticed -------- */}
         <View
           className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex-col"
           style={{ width: 256 }}
@@ -178,7 +170,6 @@ const StaticInsights = memo(() => (
           </TouchableOpacity>
         </View>
 
-        {/* -------- Key Takeaways -------- */}
         <View
           className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex-col"
           style={{ width: 256 }}
@@ -233,7 +224,6 @@ const StaticInsights = memo(() => (
 ));
 
 
-/* -------------------- MAIN SCREEN -------------------- */
 export default function SessionSummariesScreen() {
   const { userId } = useAuth();
   const [journey, setJourney] = useState<JourneyPoint[]>([]);
@@ -366,7 +356,7 @@ export default function SessionSummariesScreen() {
     <StatusBar barStyle="dark-content" />
 
     {/* 🔽 HEADER GOES HERE */}
-    <View className="sticky top-0 z-10 bg-background-light border-b border-gray-200 px-4 pt-3 pb-2">
+    <View className="sticky top-0 z-10 bg-background-light  px-4 pt-3 pb-2">
       <View className="flex-row items-center justify-between">
         <View className="w-12 items-start">
         </View>
@@ -385,21 +375,17 @@ export default function SessionSummariesScreen() {
 
     <ScrollView className="flex-1 pb-24" showsVerticalScrollIndicator={false}>
       
-      {/* Debug Banner (remove in production) */}
-      
-
-      {/* Insights from Aletheia */}
       <StaticInsights />
 
-      {/* Emotional Journey Chart - ONLY if ≥2 points */}
       {journey.length >= 2 && (
-        <View className="px-4 py-6">
+        <View className="px-4 py-2 space-y-4 mb-4">
+          <Text
+            className="text-lg font-semibold text-text-light mb-3"
+            style={{ fontFamily: 'LibreCaslonText-Bold' }}
+          >
+            Your Emotional Journey
+          </Text>
           <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-            <Text className="text-lg font-semibold text-text-light mb-3">
-              Your Emotional Journey
-            </Text>
-
-
               <View className="min-h-[180px]">
               <Svg
                 width="100%"
@@ -489,9 +475,7 @@ export default function SessionSummariesScreen() {
                   </Text>
 
                   <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-2">
-                      <Text style={{ fontSize: 26 }}>{emotion.emoji}</Text>
-                      
+                    <View className="flex-row items-center gap-2">                      
                       <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${emotion.color}22` }}>
                         <Text className="text-sm font-medium" style={{ color: emotion.color }}>
                           {emotion.label}
@@ -552,26 +536,40 @@ export default function SessionSummariesScreen() {
 
       {/* Empty State */}
       {hasSessions === false && !loading && (
-       <View className="px-4 py-10">
-              <View className="bg-white rounded-xl p-8 border border-dashed border-gray-300 items-center">
-                <MaterialCommunityIcons name="file-document-outline" size={48} color="#9CA3AF" />
-                <Text className="text-lg font-semibold text-text-light mt-4">
-                  No Sessions Yet
-                </Text>
-                <Text className="text-sm text-gray-500 text-center mt-2 mb-6">
-                  Your first session summary and insights will appear here once you've completed a session.
-                </Text>
+        <View className="px-6 pt-8 items-center">
+          <Image
+            source={require('@/assets/images/summary.png')}
+            style={{ width: 180, height: 180 }}
+            resizeMode="contain"
+          />
 
-                <TouchableOpacity
-                  className="w-full h-12 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: '#019863' }}
-                >
-                  <Text className="text-base font-bold text-white">
-                    Start Your First Session
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <Text
+            className="text-lg text-text-light mt-5 text-center"
+            style={{ fontFamily: 'LibreCaslonText-Bold', letterSpacing: 0.1 }}
+          >
+            No sessions yet
+          </Text>
+
+          <Text
+            className="text-sm text-gray-400 text-center mt-2 px-2"
+            style={{ lineHeight: 20 }}
+          >
+            Your summaries and insights will appear here once you've completed a session.
+          </Text>
+
+          <TouchableOpacity
+            className="mt-5 px-6 py-2.5 rounded-xl items-center justify-center"
+            style={{ backgroundColor: '#F3F4F6' }}
+            onPress={() => router.push('/(tabs)/home')}
+          >
+            <Text
+              className="text-sm text-gray-500"
+              style={{ fontFamily: 'LibreCaslonText-Bold' }}
+            >
+              Start a session
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
     </ScrollView>
   </SafeAreaView>

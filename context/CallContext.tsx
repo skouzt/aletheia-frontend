@@ -110,7 +110,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const cleanup = useCallback(() => {
     setIsInCall(false);
     resetCallState();
-    roomRef.current = null; // ⭐ Clear ref
+    roomRef.current = null; 
   }, [resetCallState]);
 
   const endCall = useCallback(async () => {
@@ -140,7 +140,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const startCall = useCallback(
     async (roomName: string, userId?: string) => {
-      // ⭐ Check ref instead of state to avoid stale closure
       if (isConnecting || isInCall || roomRef.current) {
         return;
       }

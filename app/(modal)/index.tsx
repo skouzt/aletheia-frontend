@@ -7,24 +7,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { Redirect, useRouter } from "expo-router";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  Text,
+  View,
 } from "react-native";
 import Animated, {
-    cancelAnimation,
-    Easing,
-    FadeIn,
-    FadeOut,
-    SlideInDown,
-    SlideOutDown,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming,
+  cancelAnimation,
+  Easing,
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import { Dimensions } from "react-native";
@@ -175,8 +175,8 @@ function SessionControlContent() {
         const token = await getToken({ template: "backend-api" });
         if (!token) return;
 
-        const res = await apiFetch(
-          "https://aletheia-backend.site/session/start",
+       const res = await apiFetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/session/start`,
           token,
           { method: "POST" }
         );

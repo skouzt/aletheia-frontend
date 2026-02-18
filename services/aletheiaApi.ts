@@ -80,10 +80,7 @@ export const aletheiaApi = {
     throw error;
   }
 },
-  /**
-   * Check bot status
-   * GET /status/{bot_pid}
-   */
+
   async getBotStatus(botPid: number): Promise<BotStatus> {
     try {
       const url = `${API_BASE_URL}/status/${botPid}`;

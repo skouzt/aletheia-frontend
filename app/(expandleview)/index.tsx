@@ -25,7 +25,7 @@ export default function ExpandViewScreen() {
     10
   );
 
-  const handleClose = () => { // ✅ Add this
+  const handleClose = () => { 
     setIsVisible(false);
     setTimeout(() => {
       router.back();
@@ -34,14 +34,13 @@ export default function ExpandViewScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      {isVisible && ( // ✅ Wrap with conditional
+      {isVisible && ( 
         <Animated.View
           entering={SlideInDown.duration(600).delay(50)}
           exiting={SlideOutDown.duration(500).easing(Easing.in(Easing.ease))}
           className="rounded-t-[28px] overflow-hidden"
           style={{ height: "92%" }}
         >
-        {/* FULL gradient background */}
         <LinearGradient
           colors={["#EAF6F1", "#F6F8F7", "#FFFFFF"]}
           locations={[0, 0.55, 1]}
@@ -73,13 +72,11 @@ export default function ExpandViewScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Scrollable content */}
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 40 }}
               className="px-5"
             >
-              {/* Pills */}
               <View className="flex-row gap-2 mb-5">
                 <View className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-white">
                   <Ionicons
@@ -89,17 +86,6 @@ export default function ExpandViewScreen() {
                   />
                   <Text className="text-xs font-semibold">
                     45 minutes
-                  </Text>
-                </View>
-
-                <View className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-[#D1FAE5]">
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={14}
-                    color="#019863"
-                  />
-                  <Text className="text-xs font-semibold text-[#019863]">
-                    Completed
                   </Text>
                 </View>
               </View>
@@ -160,15 +146,8 @@ export default function ExpandViewScreen() {
 
                 <View className="bg-white rounded-xl p-4">
                   <Text className="text-[15px] text-gray-600 leading-relaxed">
-                    {summary ||
-                      "Detailed summary will be available soon."}
+                    {summary || "Detailed summary will be available soon."}
                   </Text>
-
-                  <TouchableOpacity className="mt-2">
-                    <Text className="text-sm font-semibold text-[#019863]">
-                      Read more ⌄
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             </ScrollView>

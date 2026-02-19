@@ -16,7 +16,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useRef, // ⭐ Added
+  useRef,
   useState,
 } from 'react';
 import { Alert, PermissionsAndroid, Platform } from 'react-native';

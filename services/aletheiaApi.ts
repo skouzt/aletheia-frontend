@@ -4,11 +4,11 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 interface ConnectionResponse {
   status: string;
-  room_url: string;      // LiveKit WS URL (wss://...)
-  room_name: string;     // Room name
-  bot_token: string;     // Token for the bot
-  user_token: string;    // Token for the user
-  token: string;         // ✅ BACKWARD COMPATIBILITY (same as user_token)
+  room_url: string;      
+  room_name: string;     
+  bot_token: string;     
+  user_token: string;    
+  token: string;        
   bot_pid: number;
   status_endpoint: string;
 }

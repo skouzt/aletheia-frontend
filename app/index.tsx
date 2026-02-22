@@ -10,18 +10,15 @@ export default function Index() {
   const { hasCompletedOnboarding, isLoading } = useCheckOnboarding();
 
   const [delayDone, setDelayDone] = useState(false);
-  // Add this screen temporarily
 
-  // ⏳ 8-second splash delay
   useEffect(() => {
     const timer = setTimeout(() => {
       setDelayDone(true);
-    }, 4000); // 4 seconds
+    }, 4000); 
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Still loading auth/onboarding OR delay not finished
   if (!isLoaded || isLoading || !delayDone) {
     return (
       <View
@@ -30,7 +27,6 @@ export default function Index() {
           backgroundColor: "#FFFFFF",
         }}
       >
-        {/* Gradient covering half of the screen */}
          <LinearGradient
           colors={["#FFD36A", "#FFB347", "#F5F8F7"]}
           locations={[0, 0.55, 1]}
@@ -70,7 +66,6 @@ export default function Index() {
     );
   }
 
-  // 🔀 Routing logic (unchanged)
   if (!isSignedIn) {
     return <Redirect href="/(auth)/auth" />;
   }

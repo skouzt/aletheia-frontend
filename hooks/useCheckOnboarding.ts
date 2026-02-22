@@ -1,47 +1,61 @@
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@clerk/clerk-expo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
-export function useCheckOnboarding() {
-  const { userId, isLoaded, isSignedIn } = useAuth();
+const CACHE_KEY = (userId:String) => 'onboarding_Status_${userId}';
+
+export function useCheckOnboarding(){
+  const {userId, isLoaded, isSignedIn} = useAuth();
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoaded) {
-      setIsLoading(true);
+    if(!isLoaded){
       return;
     }
 
-    if (!isSignedIn || !userId) {
-      setHasCompletedOnboarding(false);
-      setIsLoading(false);
+    if(!isSignedIn || !userId) {
+      setHasCompletedOnboarding(false)
+      setIsLoading(false)
       return;
     }
 
-    const checkUserInDatabase = async () => {
-      try {
+    const checkUser = async () =>{
+      try{
         setIsLoading(true);
-        
-        const { data, error } = await supabase
-          .from('user_info')
-          .select('*')
-          .eq('user_id', userId);
 
-        if (error) {
-          setHasCompletedOnboarding(false);
-        } else {
-          setHasCompletedOnboarding(data && data.length > 0);
+        const cached = await AsyncStorage.getItem(CACHE_KEY(userId));
+        if (cached !== null){
+          setHasCompletedOnboarding(JSON.parse(cached));
+          setIsLoading(false);
+          return;
         }
-      } catch {
-        setHasCompletedOnboarding(false);
-      } finally {
+        const {data,error} = await supabase
+        .from('user_info')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+        .single();
+
+        const completed = !error && !!data;
+        setHasCompletedOnboarding(completed);
+
+        await AsyncStorage.setItem(
+          CACHE_KEY(userId),
+          JSON.stringify(completed)
+        );
+
+        
+      }
+      catch(err){
+        setHasCompletedOnboarding(false)
+      }
+      finally{
         setIsLoading(false);
       }
-    };
-
-    checkUserInDatabase();
-  }, [userId, isLoaded, isSignedIn]);
-
-  return { hasCompletedOnboarding, isLoading };
+    }
+    checkUser();
+  },[userId, isLoaded, isSignedIn]);
+  return {hasCompletedOnboarding, isLoading}
 }

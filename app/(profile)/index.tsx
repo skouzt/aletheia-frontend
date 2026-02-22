@@ -1,6 +1,6 @@
-import { supabase } from "@/utils/supabase";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -21,9 +21,19 @@ import Animated, {
 const AGE_GROUPS = ["Under 18", "18–24", "25–34", "35–44", "45+"];
 const GENDERS = ["Woman", "Man", "Non-binary", "Prefer not to say"];
 
+const CACHE_KEY = "@aletheia_profile_";
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface ProfileData {
+  name: string;
+  age: string;
+  gender: string;
+  timestamp: number;
+}
+
 export default function Profile() {
   const router = useRouter();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,21 +44,92 @@ export default function Profile() {
   useEffect(() => {
     if (!userId) return;
 
-    (async () => {
-      const { data } = await supabase
-        .from("user_info")
-        .select("name, age, gender")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (data) {
-        setName(data.name || "");
-        setSelectedAge(data.age || "25–34");
-        setSelectedGender(data.gender || "Woman");
+    const loadProfile = async () => {
+      const cacheKey = `${CACHE_KEY}${userId}`;
+      
+      try {
+        const cached = await AsyncStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed: ProfileData = JSON.parse(cached);
+          const isExpired = Date.now() - parsed.timestamp > CACHE_TTL_MS;
+          
+          if (!isExpired) {
+            setName(parsed.name || "");
+            setSelectedAge(parsed.age || "25–34");
+            setSelectedGender(parsed.gender || "Woman");
+            setLoading(false);
+            fetchProfileFromBackend(userId, false);
+            return;
+          }
+        }
+        
+        await fetchProfileFromBackend(userId, true);
+      } catch (error) {
+        console.error("Cache read error:", error);
+        await fetchProfileFromBackend(userId, true);
       }
-      setLoading(false);
-    })();
+    };
+
+    loadProfile();
   }, [userId]);
+
+  const fetchProfileFromBackend = async (uid: string, showLoading: boolean) => {
+    if (showLoading) setLoading(true);
+    
+    try {
+      const token = await getToken({ template: "backend-api" });
+      
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/profile`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const profileData: ProfileData = {
+        name: data.name || "",
+        age: data.age || "25–34",
+        gender: data.gender || "Woman",
+        timestamp: Date.now(),
+      };
+
+      setName(profileData.name);
+      setSelectedAge(profileData.age);
+      setSelectedGender(profileData.gender);
+      await AsyncStorage.setItem(`${CACHE_KEY}${uid}`, JSON.stringify(profileData));
+      
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+      if (showLoading) {
+        Alert.alert("Error", "Failed to load profile");
+      }
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  const saveToCache = async () => {
+    if (!userId) return;
+    
+    const profileData: ProfileData = {
+      name: name.trim(),
+      age: selectedAge,
+      gender: selectedGender,
+      timestamp: Date.now(),
+    };
+    
+    try {
+      await AsyncStorage.setItem(`${CACHE_KEY}${userId}`, JSON.stringify(profileData));
+    } catch (error) {
+      console.error("Cache save error:", error);
+    }
+  };
 
   async function handleSave() {
     if (!name.trim()) {
@@ -60,42 +141,37 @@ export default function Profile() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const { data: existing } = await supabase
-        .from("user_info")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase
-          .from("user_info")
-          .update({
-            name: name.trim(),
-            age: selectedAge,
-            gender: selectedGender,
-          })
-          .eq("user_id", userId);
-      } else {
-        await supabase.from("user_info").insert({
-          user_id: userId,
+      const token = await getToken({ template: "backend-api" });
+      
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/profile`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           name: name.trim(),
           age: selectedAge,
           gender: selectedGender,
-        });
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
+      await saveToCache();
+      
       await Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
       );
       router.back();
-    } catch {
+    } catch (error) {
       Alert.alert("Error", "Something went wrong.");
     } finally {
       setSaving(false);
     }
   }
-
-  
 
   return (
     <View className="flex-1 justify-end bg-black/40">
@@ -106,17 +182,14 @@ export default function Profile() {
         style={{ height: "92%", backgroundColor: "#F6F8F7" }}
       >
         <View className="flex-1">
-          {/* HEADER WITH GRADIENT */}
           <LinearGradient
             colors={["#EAF6F1", "#F6F8F7"]}
             locations={[0, 1]}
           >
-            {/* Drag Handle */}
             <View className="items-center pt-3 pb-1">
               <View className="h-1.5 w-12 rounded-full bg-gray-300" />
             </View>
 
-            {/* Header Row */}
             <View
               style={{
                 height: 56,
@@ -150,12 +223,10 @@ export default function Profile() {
                 Your Profile
               </Text>
 
-              {/* Spacer for symmetry */}
               <View style={{ width: 36 }} />
             </View>
           </LinearGradient>
 
-          {/* CONTENT */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
@@ -225,7 +296,6 @@ export default function Profile() {
             </View>
           </ScrollView>
 
-          {/* SAVE BUTTON */}
           <View
             style={{
               position: "absolute",

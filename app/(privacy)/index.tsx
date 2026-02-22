@@ -20,41 +20,57 @@ export default function PrivacyPolicyScreen() {
   };
 
   return (
-    <View className="flex-1 bg-transparent">
-      <LinearGradient colors={["#EAF6F1", "#F6F8F7"]} className="absolute top-0 left-0 right-0 h-full" />
+   <View className="flex-1 justify-end bg-black/40">
 
       {isVisible && (
         <Animated.View
-          entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
-          exiting={SlideOutDown.duration(300).easing(Easing.in(Easing.ease))}
-          className="rounded-t-[28px] overflow-hidden bg-[#F6F8F7]"
-        >
-          <View className="items-center pt-3 pb-1 bg-gradient-to-b from-[#EAF6F1] to-[#EAF6F1]/80 mb-10">
-          </View>
+            entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
+            exiting={SlideOutDown.duration(300).easing(Easing.in(Easing.ease))}
+            className="overflow-hidden bg-[#F6F8F7]"
+            style={{
+              height: "92%",
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+            }}
+          >
+            {/* ---------- HEADER ---------- */}
+            <View className="relative pb-6 pt-2">
+              <LinearGradient
+                colors={["#EAF6F1", "#F6F8F7"]}
+                className="absolute top-0 left-0 right-0 h-full"
+              />
 
-          <View className="relative px-6 pt-6 pb-6">
-
-            <View className="flex-row justify-between items-start mb-4">
-              <View className="flex-row items-center gap-3 mt-4">
-                <View className="w-9 h-9 rounded-full bg-[#01985e]/10 items-center justify-center">
-                  <Ionicons name="shield-checkmark-outline" size={20} color="#01985e" />
-                </View>
-                <Text className="text-3xl text-[#0C1C16] font-bold">
-                  Privacy Policy
-                </Text>
+              {/* Handle */}
+              <View className="items-center pt-3 pb-4">
+                <View className="h-1.5 w-12 rounded-full bg-gray-300/80" />
               </View>
 
-              <Pressable onPress={handleClose} className="w-10 h-10 rounded-full bg-white/60 items-center justify-center">
-                <Ionicons name="close" size={22} color="#0C1C16" />
-              </Pressable>
+              {/* Title Row */}
+              <View className="relative px-6 pt-2">
+                <View className="flex-row justify-between items-start mb-4">
+                  <View className="flex-row items-center gap-3 mt-4">
+                    <View className="w-9 h-9 rounded-full bg-[#01985e]/10 items-center justify-center">
+                      <Ionicons name="shield-checkmark-outline" size={20} color="#01985e" />
+                    </View>
+
+                    <Text className="text-3xl text-[#0C1C16] font-bold">
+                      Privacy Policy
+                    </Text>
+                  </View>
+
+                  <Pressable
+                    onPress={handleClose}
+                    className="w-10 h-10 rounded-full bg-white/70 items-center justify-center"
+                  >
+                    <Ionicons name="close" size={22} color="#0C1C16" />
+                  </Pressable>
+                </View>
+
+                <Text className="text-sm text-[#46A07D] leading-relaxed max-w-[300px]">
+                  Your privacy matters to us. Here's how we collect, use, and protect your information when you use our app.
+                </Text>
+              </View>
             </View>
-
-            <Text className="text-sm text-[#46A07D] leading-relaxed max-w-[300px]">
-              Your privacy matters to us. Here's how we collect, use, and protect your information when you use our app.
-            </Text>
-
-            <View className="h-px w-full bg-gradient-to-r from-transparent via-[#01985e]/30 to-transparent mt-6" />
-          </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }} className="px-6 pt-2">
             <Section index="01" title="Introduction" body="We are committed to protecting your privacy and ensuring a safe experience while using the app. By using our app, you agree to the practices described in this policy. Our app is designed as a wellness tool and does not replace professional medical or mental health care." />

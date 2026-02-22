@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -34,6 +34,9 @@ interface ProfileData {
 export default function Profile() {
   const router = useRouter();
   const { userId, getToken } = useAuth();
+  
+  // Track if we've already loaded to prevent duplicate fetches
+  const hasLoaded = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,33 +46,41 @@ export default function Profile() {
 
   useEffect(() => {
     if (!userId) return;
+    
+    if (hasLoaded.current) {
+      return;
+    }
+    hasLoaded.current = true;
 
     const loadProfile = async () => {
       const cacheKey = `${CACHE_KEY}${userId}`;
       
       try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        const profileKeys = allKeys.filter(k => k.startsWith(CACHE_KEY));
+        
         const cached = await AsyncStorage.getItem(cacheKey);
+        
         if (cached) {
           const parsed: ProfileData = JSON.parse(cached);
-          const isExpired = Date.now() - parsed.timestamp > CACHE_TTL_MS;
+          const age = Date.now() - parsed.timestamp;
+          const isExpired = age > CACHE_TTL_MS;
           
           if (!isExpired) {
             setName(parsed.name || "");
             setSelectedAge(parsed.age || "25–34");
             setSelectedGender(parsed.gender || "Woman");
             setLoading(false);
-            fetchProfileFromBackend(userId, false);
             return;
+          } else {
+            console.log('❌ Cache EXPIRED, will fetch from API');
           }
-        }
-        
-        await fetchProfileFromBackend(userId, true);
+        } 
+        await fetchProfileFromBackend(userId, true);   
       } catch (error) {
-        console.error("Cache read error:", error);
         await fetchProfileFromBackend(userId, true);
       }
     };
-
     loadProfile();
   }, [userId]);
 
@@ -102,6 +113,7 @@ export default function Profile() {
       setName(profileData.name);
       setSelectedAge(profileData.age);
       setSelectedGender(profileData.gender);
+      
       await AsyncStorage.setItem(`${CACHE_KEY}${uid}`, JSON.stringify(profileData));
       
     } catch (error) {
@@ -172,6 +184,7 @@ export default function Profile() {
       setSaving(false);
     }
   }
+
 
   return (
     <View className="flex-1 justify-end bg-black/40">
@@ -325,3 +338,6 @@ export default function Profile() {
     </View>
   );
 }
+
+
+             

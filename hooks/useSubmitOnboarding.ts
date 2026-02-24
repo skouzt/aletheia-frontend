@@ -1,11 +1,13 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import { useOnboardingStore } from "../state/onboardingStore";
-import { supabase } from "../utils/supabase";
+
+const CACHE_KEY = (userId: string) => `onboarding_status_${userId}`;
 
 export function useSubmitOnboarding() {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
 
@@ -25,9 +27,8 @@ export function useSubmitOnboarding() {
       const email = user?.primaryEmailAddress?.emailAddress || 
                     user?.emailAddresses?.[0]?.emailAddress;
 
-
       if (!email) {
-        console.error("❌ No email found for user");
+        console.error(" No email found for user");
       }
 
       const formData = {
@@ -41,49 +42,31 @@ export function useSubmitOnboarding() {
         Coping_Style: data.Coping_Style,
         Support_Network: data.Support_Network,
         Safety_Check: data.Safety_Check,
-        user_id: userId,
         email: email || null,
       };
 
+      const token = await getToken({ template: "backend-api" });
+      
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/onboarding`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
-      // ✅ CHECK IF USER EXISTS FIRST (webhook might have created it)
-      const { data: existingUser } = await supabase
-        .from("user_info")
-        .select("user_id, email")
-        .eq("user_id", userId)
-        .maybeSingle(); // Use maybeSingle() instead of single() to avoid error if not found
-
-      let result;
-
-      if (existingUser) {
-        // ✅ User exists (created by webhook) - UPDATE it
-        
-        result = await supabase
-          .from("user_info")
-          .update(formData)
-          .eq("user_id", userId)
-          .select()
-          .single();
-      } else {
-        // ✅ User doesn't exist - INSERT it
-        
-        result = await supabase
-          .from("user_info")
-          .insert(formData)
-          .select()
-          .single();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
       }
 
-      const { data: savedData, error } = result;
+      const savedData = await response.json();
 
-      if (error) {
-        console.error("❌ Supabase error:", error);
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
+      await AsyncStorage.setItem(CACHE_KEY(userId), JSON.stringify(true));
 
       await Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
@@ -94,7 +77,7 @@ export function useSubmitOnboarding() {
         data: savedData,
       };
     } catch (err) {
-      console.error("💥 Submit onboarding error:", err);
+      console.error(" Submit onboarding error:", err);
       return {
         success: false,
         error: err instanceof Error ? err.message : "Unknown error occurred",

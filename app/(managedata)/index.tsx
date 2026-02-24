@@ -1,4 +1,3 @@
-import { supabase } from "@/utils/supabase";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -21,16 +20,15 @@ import Animated, {
 
 export default function ManageDataScreen() {
   const router = useRouter();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [visible, setVisible] = useState(true);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ FIX: Add delayed close handler for exit animation
   const handleClose = () => {
     setVisible(false);
-    setTimeout(() => router.back(), 320); // Must be > 300ms exit duration
+    setTimeout(() => router.back(), 320);
   };
 
   async function clearHistory() {
@@ -41,7 +39,23 @@ export default function ManageDataScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      await supabase.from("therapy_sessions").delete().eq("user_id", userId);
+      const token = await getToken({ template: "backend-api" });
+      
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/therapy/sessions/clear`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -50,8 +64,9 @@ export default function ManageDataScreen() {
         "Your past session summaries have been removed."
       );
 
-      handleClose(); // Use the new handler
-    } catch {
+      handleClose();
+    } catch (error) {
+      console.error("Failed to clear history:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);

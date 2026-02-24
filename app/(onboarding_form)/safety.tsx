@@ -39,7 +39,6 @@ export default function SafetyCheck() {
 
     setIsCompleting(true);
 
-    // Submit to Supabase
     const result = await submitOnboarding();
     
     if (!result.success) {

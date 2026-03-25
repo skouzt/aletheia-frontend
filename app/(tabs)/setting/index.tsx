@@ -1,10 +1,12 @@
+import { ScreenWrapper } from '@/components/screen-wrapper'
 import SettingsScreen from '@/components/Settings'
-import React from 'react'
 
-function setting() {
+function SettingRoute() {
   return (
-   <SettingsScreen />
+    <ScreenWrapper>
+      <SettingsScreen />
+    </ScreenWrapper>
   )
 }
 
-export default setting
+export default SettingRoute

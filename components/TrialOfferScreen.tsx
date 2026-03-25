@@ -34,7 +34,7 @@ export default function TrialOfferScreen() {
       const token = await getToken({ template: "backend-api" });
       if (!token) throw new Error("Authentication failed");
 
-      // Create checkout for Guided plan ($15)
+      // Create checkout for Basic plan ($14)
       const res = await fetch(`${API_URL}/api/v1/billing/create-checkout`, {
         method: "POST",
         headers: {
@@ -42,7 +42,7 @@ export default function TrialOfferScreen() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          plan_key: "guided", // $15 plan
+          plan_key: "clarity", // $14 plan
         }),
       });
 
@@ -72,98 +72,243 @@ export default function TrialOfferScreen() {
 
   return (
     <View className="flex-1 bg-black/50 items-center justify-center px-4">
-      
       {/* CARD */}
-      <View className="w-full max-w-md bg-white rounded-[28px] overflow-hidden">
-
-        {/* Header with gradient */}
+      <View
+        className="w-full max-w-md rounded-[28px] overflow-hidden"
+        style={{ backgroundColor: "#F7F3EC" }}
+      >
+        {/* Header */}
         <LinearGradient
-          colors={["#dcfce7", "#effdf4", "#ffffff"]}
+          colors={["#EDE6D6", "#F0EAD8", "#F7F3EC"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
           className="pt-12 pb-6 items-center relative"
         >
-          {/* Close */}
           <Pressable
             onPress={handleClose}
-            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/5 items-center justify-center"
+            className="absolute top-4 right-4 items-center justify-center"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: "rgba(0,0,0,0.06)",
+            }}
           >
-            <Ionicons name="close" size={18} color="#5e8d7c" />
+            <Ionicons name="close" size={16} color="#7A7060" />
           </Pressable>
 
-          {/* Animation Space */}
-        <View className="items-center pt-8 pb-6">
-            <Image
-                    source={require("@/assets/images/trial.png")}
-                    resizeMode="contain"
-                    className="w-84 h-40 opacity-90"
-                    style={{
-                        shadowColor: "#7fcfb6",
-                        shadowOpacity: 0.12,
-                        shadowRadius: 12,
-                        shadowOffset: { width: 0, height: 4 },
-                    }}
-                    />
+          <Image
+            source={require("@/assets/images/trial.png")}
+            resizeMode="contain"
+            style={{ width: 200, height: 120, opacity: 0.85 }}
+          />
 
-        </View>
+          <View
+            style={{
+              backgroundColor: "#EDE0C8",
+              borderRadius: 20,
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+              marginBottom: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "500",
+                color: "#7A5C2E",
+                letterSpacing: 0.5,
+              }}
+            >
+              3 days free
+            </Text>
+          </View>
+
+          <View className="flex-row items-end">
+            <Text
+              style={{
+                fontSize: 44,
+                fontWeight: "500",
+                color: "#3D3528",
+              }}
+            >
+              $14
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#9A9080",
+                marginBottom: 6,
+              }}
+            >
+              /month
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              marginTop: 2,
+              fontSize: 13,
+              color: "#7A7060",
+              textAlign: "center",
+            }}
+          >
+            after your free trial ends
+          </Text>
         </LinearGradient>
 
         {/* CONTENT */}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 0 }}
         >
-          {/* Title */}
-          <View className="items-center mb-8">
-            <Text className="text-[30px] font-bold text-[#101816] text-center mb-3">
-              How your trial works
-            </Text>
-            <Text className="text-base text-[#5e8d7c] text-center leading-relaxed">
-              First 7 days free, then $15/month.{"\n"}Cancel anytime.
-            </Text>
+          {/* Feature pills */}
+          <View
+            className="flex-row"
+            style={{
+              paddingHorizontal: 24,
+              paddingTop: 20,
+              paddingBottom: 16,
+              columnGap: 10,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#EDE6D6",
+                borderRadius: 16,
+                paddingVertical: 14,
+                paddingHorizontal: 14,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "500",
+                  color: "#3D3528",
+                }}
+              >
+                10
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: "#7A7060",
+                  marginTop: 2,
+                }}
+              >
+                sessions / month
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#EDE6D6",
+                borderRadius: 16,
+                paddingVertical: 14,
+                paddingHorizontal: 14,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "500",
+                  color: "#3D3528",
+                }}
+              >
+                40 min
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: "#7A7060",
+                  marginTop: 2,
+                }}
+              >
+                daily limit
+              </Text>
+            </View>
           </View>
 
+          {/* Divider */}
+          <View
+            style={{
+              height: 0.5,
+              backgroundColor: "#DDD5C0",
+              marginHorizontal: 24,
+              marginBottom: 18,
+            }}
+          />
+
           {/* Timeline */}
-          <TimelineItem
-            icon="lock-open-outline"
-            title="Today"
-            text="Unlock full access to mindful conversations (60 min/day)."
-            showLine
-          />
+          <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+            <TimelineItem
+              title="TODAY"
+              text="Full access unlocked. Start your first session whenever you're ready."
+              active
+              marker="1"
+              showLine
+            />
 
-          <TimelineItem
-            icon="notifications-outline"
-            title="Day 5"
-            text="We’ll send you a reminder email so there are no surprises on your bill."
-            showLine
-          />
+            <TimelineItem
+              title="DAY 2"
+              text="We'll send a gentle reminder before your trial ends."
+              marker="2"
+              showLine
+            />
 
-          <TimelineItem
-            icon="checkmark-circle-outline"
-            title="Day 7"
-            text="Trial converts to subscription. Cancel before this day and pay nothing."
-          />
+            <TimelineItem
+              title="DAY 3"
+              text="Trial ends. Cancel before this and pay nothing at all."
+              marker="3"
+            />
+          </View>
         </ScrollView>
 
         {/* CTA */}
-        <View className="px-6 pb-6 pt-2">
-          <Pressable 
-            onPress={handleStartTrial} 
+        <View
+          style={{
+            paddingHorizontal: 24,
+            paddingBottom: 24,
+            paddingTop: 4,
+          }}
+        >
+          <Pressable
+            onPress={handleStartTrial}
             disabled={isLoading}
-            className="bg-[#019863] py-4 rounded-full items-center mb-4"
-            style={{ opacity: isLoading ? 0.7 : 1 }}
+            className="items-center"
+            style={{
+              backgroundColor: "#019863",
+              borderRadius: 9999,
+              paddingVertical: 15,
+              width: "100%",
+              opacity: isLoading ? 0.7 : 1,
+            }}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text className="text-white text-lg font-semibold">
+              <Text
+                style={{ fontSize: 16, fontWeight: "500", color: "#FFFFFF" }}
+              >
                 Start my free trial
               </Text>
             )}
           </Pressable>
 
-          <View className="flex-row items-center justify-center gap-2 mb-3">
-            <Ionicons name="checkmark-circle" size={16} color="#5e8d7c" />
-            <Text className="text-xs text-[#5e8d7c]">
-              No commitment. Cancel anytime in settings.
+          <View
+            className="flex-row items-center justify-center"
+            style={{ marginTop: 10, columnGap: 6 }}
+          >
+            <Ionicons name="checkmark-circle" size={14} color="#7A7060" />
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#9A9080",
+              }}
+            >
+              No commitment · Cancel anytime
             </Text>
           </View>
         </View>
@@ -175,32 +320,64 @@ export default function TrialOfferScreen() {
 /* ---------- Timeline Item ---------- */
 
 function TimelineItem({
-  icon,
   title,
   text,
+  active,
+  marker,
   showLine,
 }: {
-  icon: any;
   title: string;
   text: string;
+  active?: boolean;
+  marker: string;
   showLine?: boolean;
 }) {
   return (
-    <View className="flex-row gap-4 mb-6">
-      <View className="items-center">
-        <View className="h-10 w-10 rounded-full bg-[#019863]/10 items-center justify-center">
-          <Ionicons name={icon} size={18} color="#019863" />
+    <View className="flex-row" style={{ columnGap: 14 }}>
+      <View style={{ width: 28, alignItems: "center" }}>
+        <View
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: active ? "#019863" : "#EDE6D6",
+          }}
+        >
+          {active ? (
+            <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+          ) : (
+            <Text style={{ fontSize: 12, fontWeight: "500", color: "#7A7060" }}>
+              {marker}
+            </Text>
+          )}
         </View>
         {showLine && (
-          <View className="w-[2px] flex-1 bg-[#dae7e2] mt-1" />
+          <View
+            style={{
+              width: 1.5,
+              flex: 1,
+              backgroundColor: "#DDD5C0",
+              marginVertical: 3,
+            }}
+          />
         )}
       </View>
 
-      <View className="flex-1 pt-1">
-        <Text className="text-lg font-bold text-[#101816] mb-1">
+      <View style={{ flex: 1, paddingBottom: 16 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "500",
+            color: "#9A9080",
+            letterSpacing: 0.5,
+            marginBottom: 2,
+          }}
+        >
           {title}
         </Text>
-        <Text className="text-sm text-[#5e8d7c] leading-relaxed">
+        <Text style={{ fontSize: 13, color: "#4A4235", lineHeight: 20 }}>
           {text}
         </Text>
       </View>

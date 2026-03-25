@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sessions &amp; Usage Modal</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Libre+Caslon+Text:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#10b981", // Emerald 500
+              "background-light": "#F3F4F6", // Gray 100
+              "background-dark": "#111827", // Gray 900
+              "surface-light": "#FFFFFF",
+              "surface-dark": "#1F2937",
+              "text-primary-light": "#111827", // Gray 900
+              "text-primary-dark": "#F9FAFB", // Gray 50
+              "text-secondary-light": "#4B5563", // Gray 600
+              "text-secondary-dark": "#9CA3AF", // Gray 400
+              "divider-light": "#E5E7EB", // Gray 200
+              "divider-dark": "#374151", // Gray 700
+            },
+            fontFamily: {
+              display: ['"Libre Caslon Text"', "serif"],
+              sans: ['"Inter"', "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+              'xl': "0.75rem",
+              '2xl': "1rem",
+              '3xl': "1.5rem",
+            },
+          },
+        },
+      };
+    </script>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-sans antialiased h-screen w-full overflow-hidden relative selection:bg-primary selection:text-white">
+<div aria-hidden="true" class="absolute inset-0 z-0 p-6 opacity-30 pointer-events-none filter blur-[2px]">
+<h1 class="font-display text-3xl font-bold mb-6 text-text-primary-light dark:text-text-primary-dark">Settings &amp; Privacy</h1>
+<div class="space-y-6">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-sm">
+<div class="h-12 w-full bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-sm h-32">
+<div class="h-full w-full bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+</div>
+</div>
+</div>
+<div class="absolute inset-0 bg-black/40 dark:bg-black/60 z-10 backdrop-blur-sm transition-opacity duration-300"></div>
+<div class="absolute bottom-0 left-0 right-0 z-20 flex flex-col h-[92%] bg-background-light dark:bg-background-dark rounded-t-3xl shadow-2xl transform transition-transform duration-500 ease-out overflow-hidden">
+<div class="w-full flex justify-center pt-3 pb-1">
+<div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+</div>
+<div class="px-6 py-4 flex justify-between items-start shrink-0">
+<div>
+<h2 class="font-display text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">Sessions &amp; Usage</h2>
+<p class="text-sm text-text-secondary-light dark:text-text-secondary-dark mt-1 font-medium">Your daily conversation activity</p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+<span class="material-icons-round text-2xl">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto px-6 pb-24 space-y-6">
+<!-- Active Session -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center space-x-3">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+</span>
+<span class="text-sm font-semibold uppercase tracking-wider text-primary">Active Now</span>
+</div>
+<span class="material-icons-round text-primary/40 dark:text-primary/30">mic</span>
+</div>
+<h3 class="text-xl font-display text-text-primary-light dark:text-text-primary-dark mb-1">
+                    Session active
+                </h3>
+<p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    12 minutes so far
+                </p>
+</div>
+<!-- Daily Allowance (Updated to 40 mins) -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-center space-x-3 mb-4">
+<div class="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-full flex items-center justify-center">
+<span class="material-icons-round text-primary text-xl">timelapse</span>
+</div>
+<span class="text-base font-semibold text-text-primary-light dark:text-text-primary-dark">Daily Allowance</span>
+</div>
+<div class="mb-2 flex justify-between items-end">
+<span class="text-3xl font-display text-text-primary-light dark:text-text-primary-dark">18 <span class="text-lg text-text-secondary-light dark:text-text-secondary-dark font-sans">of 40 mins</span></span>
+<span class="text-xs text-text-secondary-light dark:text-text-secondary-dark mb-1">Resets at midnight</span>
+</div>
+<div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+<div class="bg-primary h-2 rounded-full" style="width: 45%"></div>
+</div>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-3">
+                    You have 22 minutes remaining for today's sessions.
+                </p>
+</div>
+<!-- Subscription Plans (New Section) -->
+<div>
+<h3 class="font-display text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-3 px-1">Subscription Plans</h3>
+<div class="grid grid-cols-1 gap-3">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<div class="bg-indigo-50 dark:bg-indigo-900/20 p-2.5 rounded-full text-indigo-500">
+<span class="material-icons-round text-xl">spa</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">Clarity</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">10 sessions, 40 min</p>
+</div>
+</div>
+<span class="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">Current</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between group cursor-pointer hover:border-primary/30 transition-colors">
+<div class="flex items-center space-x-4">
+<div class="bg-purple-50 dark:bg-purple-900/20 p-2.5 rounded-full text-purple-500">
+<span class="material-icons-round text-xl">auto_awesome</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">Insight</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">15 sessions, 40 mins</p>
+</div>
+</div>
+<span class="material-icons-round text-gray-300 dark:text-gray-600 text-sm">arrow_forward_ios</span>
+</div>
+</div>
+</div>
+<!-- Recent Sessions -->
+<div>
+<h3 class="font-display text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-3 px-1">Recent Sessions</h3>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-800 divide-y divide-divider-light dark:divide-divider-dark">
+<div class="p-4 flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex items-center space-x-4">
+<div class="bg-gray-100 dark:bg-gray-700/50 p-2.5 rounded-full text-gray-500 dark:text-gray-400">
+<span class="material-icons-round text-xl">calendar_today</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">Today</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">2:30 PM</p>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-sm text-text-secondary-light dark:text-text-secondary-dark font-medium">15 min</span>
+<span class="material-icons-round text-gray-300 dark:text-gray-600 text-sm">arrow_forward_ios</span>
+</div>
+</div>
+<div class="p-4 flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex items-center space-x-4">
+<div class="bg-gray-100 dark:bg-gray-700/50 p-2.5 rounded-full text-gray-500 dark:text-gray-400">
+<span class="material-icons-round text-xl">calendar_today</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">Yesterday</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">6:15 PM</p>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-sm text-text-secondary-light dark:text-text-secondary-dark font-medium">45 min</span>
+<span class="material-icons-round text-gray-300 dark:text-gray-600 text-sm">arrow_forward_ios</span>
+</div>
+</div>
+<div class="p-4 flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex items-center space-x-4">
+<div class="bg-gray-100 dark:bg-gray-700/50 p-2.5 rounded-full text-gray-500 dark:text-gray-400">
+<span class="material-icons-round text-xl">calendar_today</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark">Oct 24</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">9:00 AM</p>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-sm text-text-secondary-light dark:text-text-secondary-dark font-medium">20 min</span>
+<span class="material-icons-round text-gray-300 dark:text-gray-600 text-sm">arrow_forward_ios</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="pt-2">
+<button class="w-full py-4 rounded-xl bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 shadow-sm">
+<span class="material-icons-round text-lg">stop_circle</span>
+                    End current session
+                </button>
+</div>
+</div>
+</div>
+</body></html>

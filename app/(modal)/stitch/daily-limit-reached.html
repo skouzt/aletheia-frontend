@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#019863',
+              'surface': '#F6F8F7',
+              'on-surface': '#1C1D1B',
+              'on-surface-variant': '#5C615D'
+            },
+            fontFamily: {
+              "headline": ["Libre Caslon Text", "serif"],
+              "body": ["Public Sans", "sans-serif"],
+              "label": ["Public Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1.5rem", "3xl": "2rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .bg-soft-gradient {
+        background: linear-gradient(180deg, rgba(246, 248, 247, 0) 0%, rgba(246, 248, 247, 1) 100%);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-stone-200 font-body text-on-surface antialiased">
+<!-- Modal Overlay Backdrop -->
+<div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-0"></div>
+<!-- Main Content Container (Simulating the Mobile Viewport) -->
+<main class="relative mx-auto max-w-md min-h-screen flex items-end justify-center overflow-hidden">
+<!-- Bottom Sheet Modal -->
+<div class="w-full bg-surface rounded-t-3xl shadow-2xl relative z-10 flex flex-col items-center animate-in slide-in-from-bottom duration-500">
+<!-- Handle Decorator -->
+<div class="w-12 h-1.5 bg-stone-300 rounded-full mt-4 mb-2 opacity-50"></div>
+<!-- Top Section: Calming Illustration -->
+<div class="w-full aspect-[4/3] relative overflow-hidden px-4 pt-2">
+<div class="w-full h-full rounded-2xl overflow-hidden relative">
+<img alt="Calming illustration" class="w-full h-full object-cover" data-alt="Abstract serene landscape with soft rolling hills in sage green and teal tones, misty morning atmosphere with diffused sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAU-Qz-Z7lUJRwRVB_cvYfQe1jn89YY0OuXkaeSkPplPUPX1n6RhhtZNLZ00CZvwoktgxboDI9Qt-rFTEpVqSF4Dvq-2iMy2msJMsHR-NrYSWGWl7uv4_0-onZ8xNp6XQKvJJaeATPb-Oxy-ZzKl_lxSLd67GmPOvTEf5VrRNUb2r6vmj6qUHvfbwzCFN6EHe6Bx4mm1SVnSeFt85jpskls1Mt9pVOd1gz0ve65lGcwTaYVpHRC9dDbNAk9biO5z1HCg3sIIDxbOxM" style=""/>
+<!-- Gradient overlay for text legibility if needed, though here it leads into the content -->
+<div class="absolute inset-0 bg-soft-gradient"></div>
+</div>
+</div>
+<!-- Content Section -->
+<div class="px-8 pt-4 pb-12 w-full flex flex-col items-center text-center">
+<!-- Headline -->
+<h1 class="font-headline text-3xl text-stone-800 leading-tight mb-4" style="">
+                    Time for a Mindful Break
+                </h1>
+<!-- Message -->
+<p class="text-on-surface-variant text-base leading-relaxed mb-10 max-w-[300px]" style="">That’s a solid 40 minutes of focused effort. Progress isn’t about doing more, it’s about showing up consistently. Take a break, reset your mind, and come back stronger tomorrow.</p>
+<!-- Daily Usage Summary Card -->
+<div class="w-full bg-white rounded-2xl p-6 mb-10 border border-stone-100 flex flex-col items-center">
+<div class="flex items-center justify-between w-full mb-3 px-1">
+<span class="text-sm font-medium text-stone-600" style="">Daily Reflection</span>
+<span class="text-sm font-semibold text-primary" style="">40 of 40 mins used today</span>
+</div>
+<!-- Progress Bar Container -->
+<div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden">
+<!-- Full Green Progress Bar -->
+<div class="h-full bg-primary rounded-full w-full"></div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-primary/80">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle" style='font-variation-settings: "FILL" 1;'>check_circle</span>
+<span class="text-xs font-medium uppercase tracking-wider" style=""><br/></span>
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="w-full py-4 bg-primary text-white font-semibold text-lg rounded-full hover:bg-[#018053] active:scale-[0.98] transition-all shadow-lg shadow-primary/20" style="">
+                    Got it
+                </button>
+</div>
+<!-- Safe Area Spacer -->
+<div class="h-6 w-full"></div>
+</div>
+</main>
+<!-- Visual Hint of the background app (Aletheia Home) -->
+<div class="fixed inset-0 -z-10 flex flex-col">
+<!-- TopAppBar (Suppressed styling but visible as "background") -->
+<header class="bg-stone-50 border-b border-stone-200 flex items-center justify-between px-6 h-16 w-full blur-[2px]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-teal-600" data-icon="spa" style="">spa</span>
+<span class="font-headline font-semibold text-lg tracking-tight text-teal-700" style="">Mindful Moments</span>
+</div>
+<span class="material-symbols-outlined text-stone-400" data-icon="account_circle" style="">account_circle</span>
+</header>
+<div class="flex-1 p-6 space-y-6 blur-[2px]">
+<div class="h-32 bg-white rounded-xl shadow-sm"></div>
+<div class="grid grid-cols-2 gap-4">
+<div class="h-40 bg-white rounded-xl shadow-sm"></div>
+<div class="h-40 bg-white rounded-xl shadow-sm"></div>
+</div>
+<div class="h-32 bg-white rounded-xl shadow-sm"></div>
+</div>
+</div>
+</body></html>

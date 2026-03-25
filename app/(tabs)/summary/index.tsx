@@ -1,9 +1,12 @@
+import { ScreenWrapper } from '@/components/screen-wrapper'
 import SessionSummariesScreen from '@/components/summary'
 
-function summary() {
+function SummaryRoute() {
   return (
-    <SessionSummariesScreen />
+    <ScreenWrapper>
+      <SessionSummariesScreen />
+    </ScreenWrapper>
   )
 }
 
-export default summary
+export default SummaryRoute

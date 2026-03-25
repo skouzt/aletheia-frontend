@@ -1,21 +1,23 @@
-import { registerGlobals } from '@livekit/react-native';
-import * as WebBrowser from "expo-web-browser";
-WebBrowser.maybeCompleteAuthSession();
-
 import { CallProvider } from "@/context/CallContext";
 import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { registerGlobals } from '@livekit/react-native';
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import * as Linking from "expo-linking";
+import { SplashScreen, Stack, useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import "../global.css";
+
+WebBrowser.maybeCompleteAuthSession();
 registerGlobals();
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const router = useRouter();
   const [fontsLoaded, error] = useFonts({
     "LibreCaslonText-Bold": require("../assets/fonts/LibreCaslonText-Bold.ttf"),
     "LibreCaslonText-Italic": require("../assets/fonts/LibreCaslonText-Italic.ttf"),
@@ -26,6 +28,24 @@ export default function RootLayout() {
     if (error) throw error;
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded, error]);
+
+  useEffect(() => {
+    const handleCheckoutReturn = (url?: string | null) => {
+      if (!url) return;
+
+      if (url.includes("payment/result")) {
+        router.replace("/payment/result");
+      }
+    };
+
+    Linking.getInitialURL().then(handleCheckoutReturn);
+
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleCheckoutReturn(url);
+    });
+
+    return () => subscription.remove();
+  }, [router]);
 
   if (!fontsLoaded) return null;
 
@@ -45,6 +65,7 @@ export default function RootLayout() {
               <Stack.Screen name="index" />
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(onboarding_form)" />
+              <Stack.Screen name="payment/result" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="(modal)"

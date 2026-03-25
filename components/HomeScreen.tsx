@@ -1,7 +1,10 @@
+import { useTabTransition } from "@/context/tab-transition";
+import { useSessionLimit } from "@/hooks/useSessionLimit";
+import { useSubscription } from "@/hooks/useSubscription";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import React, { useEffect, useMemo } from "react";
-import { Image, Pressable, StatusBar, Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Image, StatusBar, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,21 +28,53 @@ const GREETINGS = [
 ];
 
 export default function HomeScreen() {
+  const { onSlideComplete } = useTabTransition();
+  const { check, loading } = useSessionLimit();
+  const subscription = useSubscription();
+
   const greeting = useMemo(
     () => GREETINGS[Math.floor(Math.random() * GREETINGS.length)],
     []
   );
 
+  const [orbPaused, setOrbPaused] = useState(true);
 
-  
+  useFocusEffect(
+    useCallback(() => {
+      setOrbPaused(true);
 
+      onSlideComplete.current = () => {
+        setOrbPaused(false);
+        onSlideComplete.current = null;
+      };
 
+      return () => {
+        onSlideComplete.current = null;
+        setOrbPaused(true);
+      };
+    }, [])
+  );
 
-  const handleStartSession = () => {
-    router.push("/(modal)");
-  };
+const handleStartSession = async () => {
+  if (loading) return;
 
-  /* ───────────────── Animations ───────────────── */
+  const usage = await check();
+  if (!usage) return;
+
+  if (usage.reason === "limit_reached") {
+    router.push("/usage");
+    return;
+  }
+
+  if (!usage.allowed) {
+    router.push("/paywall");
+    return;
+  }
+
+  router.push("/(modal)");
+};
+
+  /* ───────── Animations ───────── */
 
   const headerOpacity = useSharedValue(0);
   const textOpacity = useSharedValue(0);
@@ -78,22 +113,18 @@ export default function HomeScreen() {
     opacity: hintOpacity.value,
   }));
 
-  /* ───────────────── UI ───────────────── */
-
   return (
     <View className="flex-1">
       <StatusBar barStyle="dark-content" />
 
       <LinearGradient
-  colors={["#FAFBFC", "#EDF1F4", "#DCE3EA"]}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 0, y: 1 }}
-  className="absolute inset-0"
-/>
-
+        colors={["#FAFBFC", "#EDF1F4", "#DCE3EA"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        className="absolute inset-0"
+      />
 
       <SafeAreaView className="flex-1" edges={["top"]}>
-        {/* ───────── Header ───────── */}
         <Animated.View
           style={animatedHeaderStyle}
           className="items-center pt-6 pb-4"
@@ -103,13 +134,9 @@ export default function HomeScreen() {
             style={{ width: 220, height: 100 }}
             resizeMode="contain"
           />
-
-        
         </Animated.View>
 
-        {/* ───────── Main Content ───────── */}
         <View className="flex-1 items-center justify-center px-8">
-          {/* Greeting */}
           <Animated.View style={[animatedTextStyle, { alignItems: "center" }]}>
             <Text
               className="text-center text-2xl text-slate-800 leading-snug"
@@ -119,26 +146,24 @@ export default function HomeScreen() {
             </Text>
           </Animated.View>
 
-          {/* Orb */}
           <View className="mt-10">
-            <Pressable onPress={handleStartSession}>
-              <View
-                style={{
-                  shadowColor: "#6EE7B7",
-                  shadowOffset: { width: 0, height: 12 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 18,
-                }}
-              >
-                <LiquidWaveVoiceButton onPress={handleStartSession} />
-              </View>
-            </Pressable>
+            <View
+              style={{
+                shadowColor: "#6EE7B7",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.25,
+                shadowRadius: 18,
+              }}
+            >
+              <LiquidWaveVoiceButton
+                disabled={subscription.loading} // ✅ PERFECT
+                onPress={handleStartSession}
+                paused={orbPaused}
+              />
+            </View>
           </View>
 
-          {/* Instruction */}
-          <Animated.View
-            style={[animatedHintStyle, { marginTop: 24 }]}
-          >
+          <Animated.View style={[animatedHintStyle, { marginTop: 24 }]}>
             <Text className="text-slate-400 text-xs tracking-widest uppercase">
               Begin when you’re ready
             </Text>

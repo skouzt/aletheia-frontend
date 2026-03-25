@@ -2,6 +2,7 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -12,10 +13,13 @@ import FluidOrb from "./FluidSphere";
 
 interface LiquidWaveVoiceButtonProps {
   onPress?: () => void;
+  paused?: boolean;
+  disabled?: boolean; 
 }
 
 export const LiquidWaveVoiceButton: React.FC<LiquidWaveVoiceButtonProps> = ({
   onPress,
+  paused = false,
 }) => {
 
   /* -------- Press feedback -------- */
@@ -43,6 +47,14 @@ export const LiquidWaveVoiceButton: React.FC<LiquidWaveVoiceButtonProps> = ({
   const floatScale = useSharedValue(1);
 
   useEffect(() => {
+    if (paused) {
+      cancelAnimation(floatY);
+      cancelAnimation(floatScale);
+      floatY.value = withTiming(0, { duration: 150 });
+      floatScale.value = withTiming(1, { duration: 150 });
+      return;
+    }
+
     floatY.value = withRepeat(
       withTiming(-12, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
       -1,
@@ -54,7 +66,7 @@ export const LiquidWaveVoiceButton: React.FC<LiquidWaveVoiceButtonProps> = ({
       -1,
       true
     );
-  }, []);
+  }, [paused]);
 
   const floatingStyle = useAnimatedStyle(() => ({
     transform: [
@@ -83,6 +95,7 @@ export const LiquidWaveVoiceButton: React.FC<LiquidWaveVoiceButtonProps> = ({
             <FluidOrb
               size={280}
               speed={0.55}   // calm internal motion
+              paused={paused}
             />
           </Pressable>
         </Animated.View>

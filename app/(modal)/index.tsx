@@ -1,7 +1,7 @@
-import { apiFetch } from "@/api/client";
 import RememberOrb, { RememberOrbRef } from "@/components/AnimatedOrb";
 import { useCall } from "@/context/CallContext";
 import { useSessionController } from "@/hooks/useSessionController";
+import { useSessionLimit } from "@/hooks/useSessionLimit";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, useRouter } from "expo-router";
@@ -28,13 +28,14 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Dimensions } from "react-native";
-
 const SIZE = Dimensions.get("window").width * 0.75;
+const SESSION_PIPELINE_PREP_MS = 15000;
+
 
 
 export default function SessionControlScreen() {
   const { isSignedIn, isLoaded } = useAuth();
-
+  
   if (!isLoaded) {
     return (
       <View className="flex-1 justify-center items-center bg-black/50">
@@ -137,12 +138,16 @@ function SessionControlContent() {
   const { getToken } = useAuth();
   const router = useRouter();
   const orbRef = useRef<RememberOrbRef>(null);
+  const { check ,record } = useSessionLimit();
+  const hasRecorded = useRef(false);
+  const hasRedirected = useRef(false);
 
  
 
   const [isEnding, setIsEnding] = useState(false);
   const [backendReady, setBackendReady] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+  const [isStartingSession, setIsStartingSession] = useState(false);
 
   const roomName = useMemo(
     () => `aletheia-${Date.now().toString(36)}`,
@@ -163,44 +168,66 @@ function SessionControlContent() {
     room,
   } = useCall();
 
-  const { sessionState, isPaused, pauseSession, resumeSession } =
+const handleEndSession = useCallback(async () => {
+  if (!isInCall || isEnding) return;
+
+  setIsEnding(true);
+
+  try {
+    await endCall();
+
+    if (!hasRecorded.current) {
+      hasRecorded.current = true;
+      await record(); 
+    }
+
+    await new Promise((r) => setTimeout(r, 500));
+
+  } catch (err) {
+    console.error("End session failed:", err);
+  } finally {
+    setIsEnding(false);
+  }
+}, [isInCall, isEnding, endCall, record]);
+
+
+useEffect(() => {
+  if (!isInCall) return;
+
+  const interval = setInterval(async () => {
+    try {
+      const usage = await check();
+
+      if (!usage) return;
+
+     if (!usage.allowed && !hasRedirected.current) {
+       hasRedirected.current = true;
+
+       console.log("Usage limit reached");
+
+        await handleEndSession();
+
+        setTimeout(() => {
+          router.replace("/(modal)/usage");
+        }, 500);
+      }
+    } catch (err) {
+      console.error("Usage check failed:", err);
+    }
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [isInCall, check, handleEndSession, router]); 
+
+const { sessionState, isPaused, pauseSession, resumeSession } =
     useSessionController(room);
 
-  // Initialize backend session
-  useEffect(() => {
-    let alive = true;
+ useEffect(() => {
+  setBackendReady(true);
+}, []);
 
-    const ensureSession = async () => {
-      try {
-        const token = await getToken({ template: "backend-api" });
-        if (!token) return;
 
-       const res = await apiFetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/session/start`,
-          token,
-          { method: "POST" }
-        );
 
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Session start failed:", text);
-          return;
-        }
-
-        if (alive) setBackendReady(true);
-      } catch (err) {
-        console.error("Session start error:", err);
-        Alert.alert("Error", "Failed to initialize therapy session.");
-      }
-    };
-
-    ensureSession();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // Detect user speaking
   useEffect(() => {
     if (!transcript || isPaused || !isInCall || isSpeaking) {
       setIsUserSpeaking(false);
@@ -212,7 +239,6 @@ function SessionControlContent() {
     return () => clearTimeout(timeout);
   }, [transcript, isPaused, isInCall, isSpeaking]);
 
-  // Animate orb
   useEffect(() => {
     if (!isInCall || isPaused) {
       orbRef.current?.setMode(0);
@@ -246,17 +272,7 @@ function SessionControlContent() {
 
 
 
-const handleStartSession = useCallback(async () => {
-  if (!backendReady) {
-    Alert.alert("Please wait", "Session is still initializing.");
-    return;
-  }
-
-  await proceedWithStart();
-}, [backendReady]);
-
-
-  const proceedWithStart = async () => {
+  const proceedWithStart = useCallback(async (): Promise<boolean> => {
     try {
       const { Audio } = await import("expo-av");
 
@@ -268,68 +284,63 @@ const handleStartSession = useCallback(async () => {
         playThroughEarpieceAndroid: false,
       });
 
-      const { status } = await Audio.getPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Microphone access is required.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Grant Permission",
-              onPress: async () => {
-                const r = await Audio.requestPermissionsAsync();
-                if (r.status === "granted") {
-                  // ✅ Start tracking
-                  await startCall(roomName);
-                }
-              },
-            },
-          ]
-        );
-        return;
+      let permissionStatus = (await Audio.getPermissionsAsync()).status;
+      if (permissionStatus !== "granted") {
+        permissionStatus = (await Audio.requestPermissionsAsync()).status;
       }
 
-      // ✅ Start tracking
+      if (permissionStatus !== "granted") {
+        Alert.alert("Permission Required", "Microphone access is required.");
+        return false;
+      }
+
       await startCall(roomName);
+      return true;
     } catch (err) {
       console.error("Start call failed:", err);
       Alert.alert("Connection Error", "Unable to connect to Aletheia.");
+      return false;
     }
-  };
+  }, [roomName, startCall]);
 
-  const handleEndSession = useCallback(async () => {
-    if (!isInCall || isEnding) return;
+  const handleStartSession = useCallback(async () => {
+    if (isStartingSession || isConnecting || isEnding || isInCall) return;
 
-    setIsEnding(true);
-
+    setIsStartingSession(true);
     try {
-      await endCall();
-      
-      // ✅ End tracking
-      
-      await new Promise((r) => setTimeout(r, 1500));
-      
-      
-    } catch (err) {
-      console.error("End session failed:", err);
-      Alert.alert("Error", "Failed to end session.");
+      const started = await proceedWithStart();
+      if (started) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, SESSION_PIPELINE_PREP_MS)
+        );
+      }
     } finally {
-      setIsEnding(false);
+      setIsStartingSession(false);
     }
-  }, [isInCall, isEnding, endCall, router]);
+  }, [
+    isStartingSession,
+    isConnecting,
+    isEnding,
+    isInCall,
+    proceedWithStart,
+  ]);
 
-  const handlePauseResume = useCallback(() => {
-    if (!isInCall || isConnecting || isEnding) return;
+ 
+
+const handlePauseResume = useCallback(() => {
+    if (!isInCall || isConnecting || isStartingSession || isEnding) return;
     isPaused ? resumeSession() : pauseSession();
   }, [
     isInCall,
     isConnecting,
+    isStartingSession,
     isEnding,
     isPaused,
     resumeSession,
     pauseSession,
   ]);
+
+  const isSessionLoading = isConnecting || isStartingSession;
 
   useEffect(() => {
     if (error) {
@@ -406,7 +417,7 @@ const handleStartSession = useCallback(async () => {
     }}
   >
 
-    {isConnecting ? (
+    {isSessionLoading ? (
       <ActivityIndicator size="large" color="#019863" />
     ) : (
       <Suspense fallback={<ActivityIndicator size="large" color="#019863" />}>
@@ -458,7 +469,7 @@ const handleStartSession = useCallback(async () => {
               >
                 <Pressable
                   onPress={toggleMute}
-                  disabled={isConnecting || isEnding}
+                  disabled={isSessionLoading || isEnding}
                   className="flex-1"
                   style={{
                     height: 50,
@@ -466,7 +477,7 @@ const handleStartSession = useCallback(async () => {
                     backgroundColor: '#A8BFB3',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    opacity: (isConnecting || isEnding) ? 0.5 : 1,
+                    opacity: (isSessionLoading || isEnding) ? 0.5 : 1,
                   }}
                 >
                   <Ionicons
@@ -478,7 +489,7 @@ const handleStartSession = useCallback(async () => {
 
                 <Pressable
                   onPress={handlePauseResume}
-                  disabled={isConnecting || isEnding}
+                  disabled={isSessionLoading || isEnding}
                   className="flex-1"
                   style={{
                     height: 50,
@@ -486,7 +497,7 @@ const handleStartSession = useCallback(async () => {
                     backgroundColor: '#A8BFA3',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    opacity: (isConnecting || isEnding) ? 0.5 : 1,
+                    opacity: (isSessionLoading || isEnding) ? 0.5 : 1,
                   }}
                 >
                   <Ionicons
@@ -500,17 +511,17 @@ const handleStartSession = useCallback(async () => {
 
             <Pressable
               onPress={isInCall ? handleEndSession : handleStartSession}
-              disabled={!backendReady || isEnding || isConnecting}
+              disabled={!backendReady || isEnding || isSessionLoading}
               style={{
                 height: 50,
                 borderRadius: 14,
                 backgroundColor: isInCall ? '#C88A7A' : '#019863',
                 alignItems: 'center',
                 justifyContent: 'center',
-                opacity: (!backendReady || isEnding || isConnecting) ? 0.5 : 1,
+                opacity: (!backendReady || isEnding || isSessionLoading) ? 0.5 : 1,
               }}
             >
-              {(isEnding || isConnecting) ? (
+              {(isEnding || isSessionLoading) ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text 

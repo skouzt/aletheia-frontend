@@ -1,6 +1,6 @@
-import * as Haptics from "expo-haptics";
+import { BlurView } from "expo-blur";
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 interface BottomNavBarProps {
   activeTab: "home" | "summary" | "setting";
@@ -8,6 +8,9 @@ interface BottomNavBarProps {
 }
 
 export default function BottomNavBar({ activeTab, onTabPress }: BottomNavBarProps) {
+  const scheme = useColorScheme();
+  const isDark = scheme === "dark";
+
   const icons = {
     home: {
       default: require("@/assets/icons/home.png"),
@@ -30,68 +33,70 @@ export default function BottomNavBar({ activeTab, onTabPress }: BottomNavBarProp
   };
 
   return (
-    <View
-      style={{
-        position: "absolute",
-        alignSelf: "center",
-        bottom: 30,
-      }}
-    >
-      {/* Compact white navbar */}
-      <View
+    <View className="absolute self-center" style={{ bottom: 30 }}>
+      <BlurView
+        intensity={isDark ? 80 : 60}
+        tint={isDark ? "dark" : "light"}
+        className="flex-row items-center"
         style={{
-          backgroundColor: "white",
           borderRadius: 9999,
-          paddingVertical: 4,
-          paddingHorizontal: 4,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 2,
+          overflow: "hidden",
+          backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.45)",
+          borderWidth: 1,
+          borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.7)",
+          padding: 7,
+          gap: 4,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.08,
-          shadowRadius: 20,
-          elevation: 8,
+          shadowOpacity: 0.10,
+          shadowRadius: 24,
+          elevation: 12,
         }}
       >
         {(["home", "summary", "setting"] as const).map((tab) => {
           const isActive = activeTab === tab;
-          const isSettings = tab === "setting";
 
           return (
             <TouchableOpacity
               key={tab}
               onPress={() => {
-                Haptics.selectionAsync();
                 onTabPress(tab);
               }}
+              className="items-center justify-center"
               style={{
-                flexDirection: isSettings && isActive ? "row-reverse" : "row",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 10,
-                paddingHorizontal: isActive ? 16 : 12,
-                backgroundColor: isActive ? "#019863" : "transparent",
+                flexDirection: "row",
+                paddingVertical: 12,
+                paddingHorizontal: isActive ? 20 : 16,
+                backgroundColor: isActive
+                  ? (isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.88)")
+                  : "transparent",
                 borderRadius: 9999,
-                gap: 6,
+                gap: 8,
+                ...(isActive && {
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 8,
+                }),
               }}
             >
               <Image
                 source={isActive ? icons[tab].selected : icons[tab].default}
                 style={{
-                  width: 22,
-                  height: 22,
+                  width: 24,
+                  height: 24,
                   resizeMode: "contain",
-                  tintColor: isActive ? "white" : "#9CA3AF",
+                  tintColor: isActive
+                    ? "#019863"
+                    : (isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)"),
                 }}
               />
 
               {isActive && (
                 <Text
+                  className="text-[14px] font-medium"
                   style={{
-                    color: "white",
-                    fontSize: 13,
-                    fontWeight: "500",
+                    color: "#019863",
                     letterSpacing: 0.3,
                   }}
                 >
@@ -101,7 +106,7 @@ export default function BottomNavBar({ activeTab, onTabPress }: BottomNavBarProp
             </TouchableOpacity>
           );
         })}
-      </View>
+      </BlurView>
     </View>
   );
 }

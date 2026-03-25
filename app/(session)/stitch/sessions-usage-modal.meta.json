@@ -1,0 +1,20 @@
+{
+  "project": {
+    "title": "Aletheia",
+    "id": "6937460391601205519"
+  },
+  "screen": {
+    "title": "Sessions & Usage Modal",
+    "id": "9ff66960b4c54f5c99bf8906c927fa00"
+  },
+  "assets": {
+    "html": {
+      "localPath": "app/(managedata)/stitch/sessions-usage-modal.html",
+      "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzU0NzllYzExNmNmYzRkYzJiMjEwNDZkNzBlZTZiNjZmEgsSBxC0pJ6s_xQYAZIBIwoKcHJvamVjdF9pZBIVQhM2OTM3NDYwMzkxNjAxMjA1NTE5&filename=&opi=89354086"
+    },
+    "screenshot": {
+      "localPath": "app/(managedata)/stitch/sessions-usage-modal.png",
+      "downloadUrl": "https://lh3.googleusercontent.com/aida/ADBb0ujLSwyhvvFJrQ1jDjcL39JiGYBr_2sHd-fCOHipX8SwY5HDe-JB3YyL5-DIV_a9v5utDV0ScxrV3-IWjQAA0GdATPVDCBLQjHpedUAgs1oWFvDTxN0_27BjQqSc4eR0OysIYk5qXexFmvoR-6KBLwHmUZK-SHbzan5lepQE-tkNR9F9FfylEH79TMLM4zhYK_2VS7Qlf6SzfK8P0DWhirvH-XFegubEb_e0EqpJsUrxHB60ovlxSQPM2A"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "project": {
+    "title": "Aletheia",
+    "id": "6937460391601205519"
+  },
+  "screen": {
+    "title": "Daily Limit Reached",
+    "id": "07acb4bdf0d0436e91c67161425764fd"
+  },
+  "assets": {
+    "html": {
+      "localPath": "app/(modal)/stitch/daily-limit-reached.html",
+      "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzg1ZmJkZjdkMGYxYTQyNzhhNWVkYmY5MzNjMzE5NmRhEgsSBxC0pJ6s_xQYAZIBIwoKcHJvamVjdF9pZBIVQhM2OTM3NDYwMzkxNjAxMjA1NTE5&filename=&opi=89354086"
+    },
+    "screenshot": {
+      "localPath": "app/(modal)/stitch/daily-limit-reached.png",
+      "downloadUrl": "https://lh3.googleusercontent.com/aida/ADBb0uhhEVU3h7dt0p8mF5yhTHd1-k3GOXfZAcwq4lDKRbyjAWgw7INzZJGkhHj1QvgvEUZ8mjjJO_mp-gRMQkm3iFGugGGxAeOJl7gyirNaPTPJDpER3fV65ZPL-1ezP2l8_gB-r72cdYGnjpHkZLS3jo357o78IZjGBHQ0uV-3N5X78zbOnNZ00WOiotmvn3l5XcSGx5RdIjGiAzVdpqjpPo6gNhRTxqjLlsYoRZaUSAFMgf8cCXo81l8YIQ"
+    },
+    "heroImage": {
+      "localPath": "app/(modal)/stitch/daily-limit-reached-hero.png",
+      "downloadUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAU-Qz-Z7lUJRwRVB_cvYfQe1jn89YY0OuXkaeSkPplPUPX1n6RhhtZNLZ00CZvwoktgxboDI9Qt-rFTEpVqSF4Dvq-2iMy2msJMsHR-NrYSWGWl7uv4_0-onZ8xNp6XQKvJJaeATPb-Oxy-ZzKl_lxSLd67GmPOvTEf5VrRNUb2r6vmj6qUHvfbwzCFN6EHe6Bx4mm1SVnSeFt85jpskls1Mt9pVOd1gz0ve65lGcwTaYVpHRC9dDbNAk9biO5z1HCg3sIIDxbOxM"
+    }
+  }
+}

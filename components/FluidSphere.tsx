@@ -6,19 +6,24 @@ export interface FluidOrbProps {
   size?: number;
   speed?: number;
   style?: ViewStyle;
+  paused?: boolean;
 }
 
 const FluidOrb: React.FC<FluidOrbProps> = ({
   size = 320,
   speed = 0.5, // Slower speed looks more premium
   style,
+  paused = false,
 }) => {
   const timeRef = useRef(0);
   const [, forceRender] = useState(0);
 
   useEffect(() => {
+    if (paused) return;
+
     let mounted = true;
     let last = performance.now();
+
     const loop = (now: number) => {
       if (!mounted) return;
       const delta = (now - last) / 1000;
@@ -27,9 +32,10 @@ const FluidOrb: React.FC<FluidOrbProps> = ({
       forceRender((v) => v + 1);
       requestAnimationFrame(loop);
     };
+
     requestAnimationFrame(loop);
     return () => { mounted = false; };
-  }, [speed]);
+  }, [speed, paused]);
 
   const source = useMemo(() => {
     return Skia.RuntimeEffect.Make(`

@@ -1,6 +1,10 @@
 import HomeScreen from '@/components/HomeScreen';
-import React from 'react';
+import { ScreenWrapper } from '@/components/screen-wrapper';
 
-export default function Home() {
-  return <HomeScreen />;
+export default function HomeRoute() {
+  return (
+    <ScreenWrapper>
+      <HomeScreen />
+    </ScreenWrapper>
+  );
 }

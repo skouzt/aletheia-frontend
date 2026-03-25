@@ -2,7 +2,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -12,6 +12,7 @@ import {
   StatusBar,
   Text,
   TouchableOpacity,
+  useColorScheme,
   View
 } from 'react-native';
 import {
@@ -22,6 +23,7 @@ import {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+
 
 const CHART_HEIGHT = 150;
 const CHART_WIDTH = 472;
@@ -171,6 +173,29 @@ const StaticInsights = memo(() => (
   </View>
 ));
 
+function SummarySkeleton() {
+  const scheme = useColorScheme();
+  const skeletonColor = scheme === "dark" ? "#374151" : "#E5E7EB";
+
+  const blockStyle = {
+    borderRadius: 12,
+    backgroundColor: skeletonColor,
+    opacity: 0.5,
+  } as const;
+
+  return (
+    <View className="px-4 py-4">
+      <View style={[blockStyle, { height: 28, width: 210, marginBottom: 12 }]} />
+      <View style={[blockStyle, { height: 170, marginBottom: 20 }]} />
+      <View style={[blockStyle, { height: 230, marginBottom: 20 }]} />
+      <View style={[blockStyle, { height: 120, marginBottom: 12 }]} />
+      <View style={[blockStyle, { height: 120, marginBottom: 12 }]} />
+      <View style={[blockStyle, { height: 120, marginBottom: 12 }]} />
+      <View style={[blockStyle, { height: 220, marginBottom: 12 }]} />
+    </View>
+  );
+}
+
 export async function addSessionToCache(userId: string, newSession: SessionRow) {
   try {
     const cacheKey = CACHE_KEY(userId);
@@ -207,8 +232,10 @@ export default function SessionSummariesScreen() {
   const [hasSessions, setHasSessions] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const router = useRouter();
 
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMounted = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
   const getTokenRef = useRef(getToken); // ✅ stable ref for getToken
@@ -217,6 +244,23 @@ export default function SessionSummariesScreen() {
   useEffect(() => {
     getTokenRef.current = getToken;
   }, [getToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsReady(false);
+      timerRef.current = setTimeout(() => {
+        setIsReady(true);
+        timerRef.current = null;
+      }, 320);
+
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      };
+    }, [])
+  );
 
   const chartProgress = useSharedValue(0);
 
@@ -446,181 +490,187 @@ export default function SessionSummariesScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <StaticInsights />
+        {isReady ? (
+          <>
+            <StaticInsights />
 
-        {journey.length >= 2 && (
-          <View className="px-4 py-2 space-y-4 mb-4">
-            <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-              Your Emotional Journey
-            </Text>
-            <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-              <View className="min-h-[180px]">
-                <Svg
-                  width="100%"
-                  height={CHART_HEIGHT}
-                  viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
-                  preserveAspectRatio="none"
-                >
-                  <Defs>
-                    <LinearGradient id="chartGradient" x1="236" y1="1" x2="236" y2={CHART_HEIGHT} gradientUnits="userSpaceOnUse">
-                      <Stop offset="0" stopColor="#AEC6CF" stopOpacity="0.4" />
-                      <Stop offset="1" stopColor="#AEC6CF" stopOpacity="0" />
-                    </LinearGradient>
-                  </Defs>
-                  <Path d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`} fill="url(#chartGradient)" />
-                  <AnimatedPath
-                    d={journeyPath}
-                    stroke="#AEC6CF"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    fill="none"
-                    strokeDasharray="1000"
-                    animatedProps={animatedProps}
-                  />
-                </Svg>
+            {journey.length >= 2 && (
+              <View className="px-4 py-2 space-y-4 mb-4">
+                <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+                  Your Emotional Journey
+                </Text>
+                <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                  <View className="min-h-[180px]">
+                    <Svg
+                      width="100%"
+                      height={CHART_HEIGHT}
+                      viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
+                      preserveAspectRatio="none"
+                    >
+                      <Defs>
+                        <LinearGradient id="chartGradient" x1="236" y1="1" x2="236" y2={CHART_HEIGHT} gradientUnits="userSpaceOnUse">
+                          <Stop offset="0" stopColor="#AEC6CF" stopOpacity="0.4" />
+                          <Stop offset="1" stopColor="#AEC6CF" stopOpacity="0" />
+                        </LinearGradient>
+                      </Defs>
+                      <Path d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`} fill="url(#chartGradient)" />
+                      <AnimatedPath
+                        d={journeyPath}
+                        stroke="#AEC6CF"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        fill="none"
+                        strokeDasharray="1000"
+                        animatedProps={animatedProps}
+                      />
+                    </Svg>
+                  </View>
+                  <View className="flex-row justify-around mt-2">
+                    {journey.slice(-7).map((p, i) => (
+                      <Text key={i} className="text-xs font-bold text-gray-500">
+                        {safeFormatDate(p.date, 'EEE')}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
               </View>
-              <View className="flex-row justify-around mt-2">
-                {journey.slice(-7).map((p, i) => (
-                  <Text key={i} className="text-xs font-bold text-gray-500">
-                    {safeFormatDate(p.date, 'EEE')}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
+            )}
 
-        {sessions.length > 0 && (
-          <View className="px-4 py-2 space-y-4 mb-4">
-            <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-              Recent Sessions
-            </Text>
+            {sessions.length > 0 && (
+              <View className="px-4 py-2 space-y-4 mb-4">
+                <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+                  Recent Sessions
+                </Text>
 
-            {sessions.map((session, i) => {
-              if (!session) return null;
-              try {
-                const emotion = getEmotionInfo(session.session_intensity);
-                const dateStr = session.created_at || session.date;
-                const sessionDate = new Date(dateStr);
+                {sessions.map((session, i) => {
+                  if (!session) return null;
+                  try {
+                    const emotion = getEmotionInfo(session.session_intensity);
+                    const dateStr = session.created_at || session.date;
+                    const sessionDate = new Date(dateStr);
 
-                if (isNaN(sessionDate.getTime())) {
-                  return (
-                    <View key={session.id} className="bg-red-100 p-4 m-4 rounded-xl">
-                      <Text className="text-red-600">Invalid session date</Text>
-                    </View>
-                  );
-                }
+                    if (isNaN(sessionDate.getTime())) {
+                      return (
+                        <View key={session.id} className="bg-red-100 p-4 m-4 rounded-xl">
+                          <Text className="text-red-600">Invalid session date</Text>
+                        </View>
+                      );
+                    }
 
-                return (
-                  <View key={session.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4">
-                    <View className="flex-row justify-between items-start mb-3">
-                      <View>
-                        <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                          Session on {safeFormatDate(sessionDate, 'MMMM d, yyyy')}
+                    return (
+                      <View key={session.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4">
+                        <View className="flex-row justify-between items-start mb-3">
+                          <View>
+                            <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+                              Session on {safeFormatDate(sessionDate, 'MMMM d, yyyy')}
+                            </Text>
+                            <Text className="text-sm text-gray-500">
+                              {safeFormatDate(sessionDate, 'h:mm a')}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text className="text-base font-semibold text-text-light mb-2" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+                          {session.title}
                         </Text>
-                        <Text className="text-sm text-gray-500">
-                          {safeFormatDate(sessionDate, 'h:mm a')}
-                        </Text>
-                      </View>
-                    </View>
 
-                    <Text className="text-base font-semibold text-text-light mb-2" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                      {session.title}
-                    </Text>
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-row items-center gap-2">
+                            <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${emotion.color}22` }}>
+                              <Text className="text-sm font-medium" style={{ color: emotion.color }}>
+                                {emotion.label}
+                              </Text>
+                            </View>
+                          </View>
 
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-2">
-                        <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${emotion.color}22` }}>
-                          <Text className="text-sm font-medium" style={{ color: emotion.color }}>
-                            {emotion.label}
-                          </Text>
+                          <TouchableOpacity
+                            className="flex-row items-center gap-2"
+                            onPress={() => {
+                              try {
+                                router.push({
+                                  pathname: '/(expandleview)',
+                                  params: {
+                                    date: session.created_at || session.date,
+                                    summary: encodeForUrl(session.summary),
+                                    intensity: String(session.session_intensity),
+                                  },
+                                });
+                              } catch (error) {
+                                Alert.alert("Error", "Failed to open session details");
+                              }
+                            }}
+                          >
+                            <Text
+                              numberOfLines={1}
+                              allowFontScaling={false}
+                              style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold', fontSize: 10, minWidth: 50 }}
+                            >
+                              View Details
+                            </Text>
+                            <MaterialCommunityIcons name="arrow-right" size={16} color="#019863" />
+                          </TouchableOpacity>
                         </View>
                       </View>
+                    );
+                  } catch (error) {
+                    return (
+                      <View key={`error-${i}`} className="bg-red-100 p-4 m-4 rounded-xl">
+                        <Text className="text-red-600">Error rendering session</Text>
+                      </View>
+                    );
+                  }
+                })}
 
-                      <TouchableOpacity
-                        className="flex-row items-center gap-2"
-                        onPress={() => {
-                          try {
-                            router.push({
-                              pathname: '/(expandleview)',
-                              params: {
-                                date: session.created_at || session.date,
-                                summary: encodeForUrl(session.summary),
-                                intensity: String(session.session_intensity),
-                              },
-                            });
-                          } catch (error) {
-                            Alert.alert("Error", "Failed to open session details");
-                          }
-                        }}
-                      >
-                        <Text
-                          numberOfLines={1}
-                          allowFontScaling={false}
-                          style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold', fontSize: 10, minWidth: 50 }}
-                        >
-                          View Details
-                        </Text>
-                        <MaterialCommunityIcons name="arrow-right" size={16} color="#019863" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              } catch (error) {
-                return (
-                  <View key={`error-${i}`} className="bg-red-100 p-4 m-4 rounded-xl">
-                    <Text className="text-red-600">Error rendering session</Text>
-                  </View>
-                );
-              }
-            })}
-
-            {!!hasMore && ( // ✅ cast to boolean to fix TS2322
-              <TouchableOpacity
-                onPress={loadMore}
-                disabled={loading}
-                className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm items-center justify-center mt-2"
-              >
-                <Text className="text-[#019863] font-semibold" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                  {loading ? 'Loading...' : 'Load More'}
-                </Text>
-              </TouchableOpacity>
+                {!!hasMore && ( // ✅ cast to boolean to fix TS2322
+                  <TouchableOpacity
+                    onPress={loadMore}
+                    disabled={loading}
+                    className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm items-center justify-center mt-2"
+                  >
+                    <Text className="text-[#019863] font-semibold" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+                      {loading ? 'Loading...' : 'Load More'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
-          </View>
-        )}
 
-        {hasSessions === false && !loading && (
-          <View className="px-6 pt-8 items-center">
-            <Image
-              source={require('@/assets/images/summary.png')}
-              style={{ width: 180, height: 180 }}
-              resizeMode="contain"
-            />
-            <Text
-              className="text-lg text-text-light mt-5 text-center"
-              style={{ fontFamily: 'LibreCaslonText-Bold', letterSpacing: 0.1 }}
-            >
-              No sessions yet
-            </Text>
-            <Text className="text-sm text-gray-400 text-center mt-2 px-2" style={{ lineHeight: 20 }}>
-              Your summaries and insights will appear here once you've completed a session.
-            </Text>
-            <TouchableOpacity
-              className="mt-5 px-6 py-2.5 rounded-xl items-center justify-center"
-              style={{ backgroundColor: '#F3F4F6' }}
-              onPress={() => router.push('/(tabs)/home')}
-            >
-              <Text className="text-sm text-gray-500" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                Start a session
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            {hasSessions === false && !loading && (
+              <View className="px-6 pt-8 items-center">
+                <Image
+                  source={require('@/assets/images/summary.png')}
+                  style={{ width: 180, height: 180 }}
+                  resizeMode="contain"
+                />
+                <Text
+                  className="text-lg text-text-light mt-5 text-center"
+                  style={{ fontFamily: 'LibreCaslonText-Bold', letterSpacing: 0.1 }}
+                >
+                  No sessions yet
+                </Text>
+                <Text className="text-sm text-gray-400 text-center mt-2 px-2" style={{ lineHeight: 20 }}>
+                  Your summaries and insights will appear here once you've completed a session.
+                </Text>
+                <TouchableOpacity
+                  className="mt-5 px-6 py-2.5 rounded-xl items-center justify-center"
+                  style={{ backgroundColor: '#F3F4F6' }}
+                  onPress={() => router.push('/(tabs)/home')}
+                >
+                  <Text className="text-sm text-gray-500" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+                    Start a session
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-        {loading && hasSessions === null && (
-          <View className="px-6 pt-8 items-center">
-            <Text className="text-gray-400">Loading...</Text>
-          </View>
+            {loading && hasSessions === null && (
+              <View className="px-6 pt-8 items-center">
+                <Text className="text-gray-400">Loading...</Text>
+              </View>
+            )}
+          </>
+        ) : (
+          <SummarySkeleton />
         )}
       </ScrollView>
     </SafeAreaView>

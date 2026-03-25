@@ -24,8 +24,9 @@ export function useSubmitOnboarding() {
         };
       }
 
-      const email = user?.primaryEmailAddress?.emailAddress || 
-                    user?.emailAddresses?.[0]?.emailAddress;
+     const email = user?.primaryEmailAddress?.emailAddress ?? 
+              user?.emailAddresses?.[0]?.emailAddress ?? 
+              null; // be explicit rather than using ||
 
       if (!email) {
         console.error(" No email found for user");
@@ -48,7 +49,7 @@ export function useSubmitOnboarding() {
       const token = await getToken({ template: "backend-api" });
       
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/onboarding`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/onboarding-submit`,
         {
           method: "POST",
           headers: {

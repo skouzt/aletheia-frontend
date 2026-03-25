@@ -8,7 +8,8 @@ config.resolver.assetExts.push(
   'glb',
   'gltf',
   'spline',
-  'splinecode'
+  'splinecode',
+  'lottie'
 );
 
 // ✅ Ensure all source extensions are supported

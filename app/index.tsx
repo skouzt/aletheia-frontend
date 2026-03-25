@@ -1,31 +1,54 @@
 import { useCheckOnboarding } from "@/hooks/useCheckOnboarding";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@clerk/clerk-expo";
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from "expo-linear-gradient";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Linking, Text, View } from "react-native";
 
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth();
   const { hasCompletedOnboarding, isLoading } = useCheckOnboarding();
+  const { plan, refresh, loading: subLoading } = useSubscription();
+
   const [delayDone, setDelayDone] = useState(false);
+  const [initialUrl, setInitialUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDelayDone(true);
-    }, 4000);
+    }, 2000);
+
+    Linking.getInitialURL().then((url) => {
+      setInitialUrl(url);
+    });
+
+    refresh(); 
     return () => clearTimeout(timer);
   }, []);
 
-  if (!isLoaded || isLoading || !delayDone || hasCompletedOnboarding === null) {
+  // ✅ LOADING STATE
+  if (
+    !isLoaded ||
+    isLoading ||
+    subLoading ||
+    !delayDone ||
+    hasCompletedOnboarding === null
+  ) {
     return (
       <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
         <LinearGradient
           colors={["#FFD36A", "#FFB347", "#F5F8F7"]}
           locations={[0, 0.55, 1]}
-          className="flex-1"
+          style={{ flex: 1 }}
         >
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <Image
               source={require("@/assets/images/loading.gif")}
               style={{ width: 180, height: 180, marginBottom: 20 }}
@@ -40,13 +63,26 @@ export default function Index() {
     );
   }
 
+  // ✅ 1. HANDLE DEEP LINK FIRST
+  if (initialUrl?.includes("payment/result")) {
+    return <Redirect href="/payment/result" />;
+  }
+
+  // ✅ 2. AUTH CHECK
   if (!isSignedIn) {
     return <Redirect href="/(auth)/auth" />;
   }
 
-  if (hasCompletedOnboarding) {
-    return <Redirect href="/(tabs)/home" />;
+  // ✅ 3. ONBOARDING CHECK
+  if (!hasCompletedOnboarding) {
+    return <Redirect href="/(onboarding_form)/personal" />;
   }
 
-  return <Redirect href="/(onboarding_form)/personal" />;
+  // ✅ 4. SUBSCRIPTION CHECK (🔥 CRITICAL FIX)
+  if (plan === "none") {
+    return <Redirect href="/(subscription)/plans" />;
+  }
+
+  // ✅ 5. FINAL DESTINATION
+  return <Redirect href="/(tabs)/home" />;
 }

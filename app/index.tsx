@@ -63,26 +63,17 @@ export default function Index() {
     );
   }
 
-  // ✅ 1. HANDLE DEEP LINK FIRST
   if (initialUrl?.includes("payment/result")) {
     return <Redirect href="/payment/result" />;
   }
 
-  // ✅ 2. AUTH CHECK
   if (!isSignedIn) {
     return <Redirect href="/(auth)/auth" />;
   }
 
-  // ✅ 3. ONBOARDING CHECK
   if (!hasCompletedOnboarding) {
     return <Redirect href="/(onboarding_form)/personal" />;
   }
 
-  // ✅ 4. SUBSCRIPTION CHECK (🔥 CRITICAL FIX)
-  if (plan === "none") {
-    return <Redirect href="/(subscription)/plans" />;
-  }
-
-  // ✅ 5. FINAL DESTINATION
   return <Redirect href="/(tabs)/home" />;
 }

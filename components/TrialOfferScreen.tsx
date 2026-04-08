@@ -153,7 +153,7 @@ export default function TrialOfferScreen() {
               textAlign: "center",
             }}
           >
-            after your free trial ends
+            After trial, $14/month billed automatically
           </Text>
         </LinearGradient>
 

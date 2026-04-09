@@ -76,7 +76,7 @@ export const aletheiaApi = {
       status_endpoint: data.status_endpoint
     };
   } catch (error) {
-    console.error('❌ Error connecting to Aletheia:', error);
+    console.error('Error connecting to Lily:', error);
     throw error;
   }
 },

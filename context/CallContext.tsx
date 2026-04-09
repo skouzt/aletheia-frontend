@@ -65,7 +65,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {
             title: 'Microphone Permission',
-            message: 'Aletheia needs access to your microphone for therapy sessions.',
+            message: 'Lily needs access to your microphone for therapy sessions.',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
@@ -179,7 +179,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
 
         const firstMsg =
-          "Hey, I'm Aletheia. Think of me as a space where your thoughts can unfold and take shape. What's on your mind?";
+          "Hey, I'm Lily. Think of me as a space where your thoughts can unfold and take shape. What's on your mind?";
         setAssistantMessage(firstMsg);
 
 

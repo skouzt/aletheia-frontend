@@ -109,7 +109,7 @@ const StaticInsights = memo(() => (
       className="text-lg font-semibold text-text-light mb-3"
       style={{ fontFamily: 'LibreCaslonText-Bold' }}
     >
-      Insights from Aletheia
+      Insights from Lily
     </Text>
     <ScrollView
       horizontal
@@ -130,7 +130,7 @@ const StaticInsights = memo(() => (
             </View>
           </View>
           <Text className="text-sm text-text-light mb-4">
-            Aletheia will notice patterns in your sessions and help you understand recurring emotional themes.
+            Lily will notice patterns in your sessions and help you understand recurring emotional themes.
           </Text>
           <TouchableOpacity
             disabled

@@ -239,7 +239,7 @@ const onSignInPress = async () => {
               Your Non-Judgmental Listening Ear.
             </Text>
             <Text className="text-sm leading-5 text-[#499c7f] text-center">
-              Aletheia is always here — find immediate, confidential support without the wait or the worry of being judged.
+              Lily is always here — find immediate, confidential support without the wait or the worry of being judged.
             </Text>
           </View>
           <Image

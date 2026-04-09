@@ -298,7 +298,7 @@ const { sessionState, isPaused, pauseSession, resumeSession } =
       return true;
     } catch (err) {
       console.error("Start call failed:", err);
-      Alert.alert("Connection Error", "Unable to connect to Aletheia.");
+      Alert.alert("Connection Error", "Unable to connect to Lily.");
       return false;
     }
   }, [roomName, startCall]);
@@ -433,7 +433,7 @@ const handlePauseResume = useCallback(() => {
           <View className="px-6 mb-4">
             <View className="p-4 rounded-2xl bg-[#C8DCCF]/40">
               <Text className="text-xs font-semibold text-[#019863] mb-2">
-                Aletheia
+                Lily
               </Text>
               <Text className="text-sm text-[#2D3A3A] leading-5">
                 {assistantMessage}

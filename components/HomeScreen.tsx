@@ -4,7 +4,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, StatusBar, Text, View } from "react-native";
+import { StatusBar, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -114,26 +114,36 @@ const handleStartSession = async () => {
   }));
 
   return (
-    <View className="flex-1">
-      <StatusBar barStyle="dark-content" />
+   <View style={{ flex: 1 }}>
+  <StatusBar barStyle="dark-content" />
 
       <LinearGradient
-        colors={["#FAFBFC", "#EDF1F4", "#DCE3EA"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        className="absolute inset-0"
-      />
-
+      colors={["#F1F5F9", "#E2E8F0", "#CBD5E1"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      }}
+    />
       <SafeAreaView className="flex-1" edges={["top"]}>
         <Animated.View
           style={animatedHeaderStyle}
           className="items-center pt-6 pb-4"
         >
-          <Image
-            source={require("../assets/images/logo.png")}
-            style={{ width: 220, height: 100 }}
-            resizeMode="contain"
-          />
+          <Text
+            style={{
+              fontSize: 18,
+              fontFamily: "LibreCaslonText-Bold",
+              color: "#0F172A",
+              letterSpacing: 1.5,
+            }}
+          >
+            Lily
+          </Text>
         </Animated.View>
 
         <View className="flex-1 items-center justify-center px-8">

@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -22,11 +22,9 @@ import {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { Path } from 'react-native-svg';
 
 
-const CHART_HEIGHT = 150;
-const CHART_WIDTH = 472;
 const PAGE_SIZE = 10;
 
 const CACHE_KEY = (userId: string) => `sessions_cache_${userId}`;
@@ -69,9 +67,7 @@ interface SessionsCache {
   fetchedAt: number;
 }
 
-function intensityToY(intensity: number) {
-  return CHART_HEIGHT - (intensity / 10) * CHART_HEIGHT;
-}
+
 
 function safeFormatDate(dateInput: any, formatStr: string): string {
   try {
@@ -109,7 +105,7 @@ const StaticInsights = memo(() => (
       className="text-lg font-semibold text-text-light mb-3"
       style={{ fontFamily: 'LibreCaslonText-Bold' }}
     >
-      Insights from Lily
+      Guidance & Reflection
     </Text>
     <ScrollView
       horizontal
@@ -124,13 +120,13 @@ const StaticInsights = memo(() => (
             </View>
             <View>
               <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                Patterns Noticed
+                Spiritual Patterns
               </Text>
               <Text className="text-sm text-gray-500">Coming soon</Text>
             </View>
           </View>
           <Text className="text-sm text-text-light mb-4">
-            Lily will notice patterns in your sessions and help you understand recurring emotional themes.
+            Reflect on your walk with Him and understand the struggles and growth in your journey of faith.
           </Text>
           <TouchableOpacity
             disabled
@@ -150,13 +146,13 @@ const StaticInsights = memo(() => (
             </View>
             <View>
               <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                Key Takeaways
+                Grace & Guidance
               </Text>
               <Text className="text-sm text-gray-500">Coming soon</Text>
             </View>
           </View>
           <Text className="text-sm text-text-light mb-4">
-            Important insights and breakthroughs from your sessions will be summarized here.
+            Receive gentle guidance, forgiveness, and reminders of His grace through your journey.
           </Text>
           <TouchableOpacity
             disabled
@@ -172,6 +168,8 @@ const StaticInsights = memo(() => (
     </ScrollView>
   </View>
 ));
+
+
 
 function SummarySkeleton() {
   const scheme = useColorScheme();
@@ -460,13 +458,7 @@ export default function SessionSummariesScreen() {
     }
   }, [userId]); 
 
-  const journeyPath = useMemo(() => {
-    if (!journey || journey.length < 2) return '';
-    const stepX = CHART_WIDTH / Math.max(1, journey.length - 1);
-    return journey
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${i * stepX} ${intensityToY(p.intensity)}`)
-      .join(' ');
-  }, [journey]);
+
 
   return (
     <SafeAreaView className="flex-1 bg-background-light" edges={['top']}>
@@ -494,52 +486,10 @@ export default function SessionSummariesScreen() {
           <>
             <StaticInsights />
 
-            {journey.length >= 2 && (
-              <View className="px-4 py-2 space-y-4 mb-4">
-                <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                  Your Emotional Journey
-                </Text>
-                <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-                  <View className="min-h-[180px]">
-                    <Svg
-                      width="100%"
-                      height={CHART_HEIGHT}
-                      viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
-                      preserveAspectRatio="none"
-                    >
-                      <Defs>
-                        <LinearGradient id="chartGradient" x1="236" y1="1" x2="236" y2={CHART_HEIGHT} gradientUnits="userSpaceOnUse">
-                          <Stop offset="0" stopColor="#AEC6CF" stopOpacity="0.4" />
-                          <Stop offset="1" stopColor="#AEC6CF" stopOpacity="0" />
-                        </LinearGradient>
-                      </Defs>
-                      <Path d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`} fill="url(#chartGradient)" />
-                      <AnimatedPath
-                        d={journeyPath}
-                        stroke="#AEC6CF"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        fill="none"
-                        strokeDasharray="1000"
-                        animatedProps={animatedProps}
-                      />
-                    </Svg>
-                  </View>
-                  <View className="flex-row justify-around mt-2">
-                    {journey.slice(-7).map((p, i) => (
-                      <Text key={i} className="text-xs font-bold text-gray-500">
-                        {safeFormatDate(p.date, 'EEE')}
-                      </Text>
-                    ))}
-                  </View>
-                </View>
-              </View>
-            )}
-
             {sessions.length > 0 && (
               <View className="px-4 py-2 space-y-4 mb-4">
                 <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                  Recent Sessions
+                  Your Confessions
                 </Text>
 
                 {sessions.map((session, i) => {
@@ -646,10 +596,10 @@ export default function SessionSummariesScreen() {
                   className="text-lg text-text-light mt-5 text-center"
                   style={{ fontFamily: 'LibreCaslonText-Bold', letterSpacing: 0.1 }}
                 >
-                  No sessions yet
+                  Begin your walk with Him
                 </Text>
                 <Text className="text-sm text-gray-400 text-center mt-2 px-2" style={{ lineHeight: 20 }}>
-                  Your summaries and insights will appear here once you've completed a session.
+                  Share what’s on your heart. In His presence, there is grace, peace, and understanding.
                 </Text>
                 <TouchableOpacity
                   className="mt-5 px-6 py-2.5 rounded-xl items-center justify-center"
@@ -657,7 +607,7 @@ export default function SessionSummariesScreen() {
                   onPress={() => router.push('/(tabs)/home')}
                 >
                   <Text className="text-sm text-gray-500" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                    Start a session
+                    Begin Confession
                   </Text>
                 </TouchableOpacity>
               </View>

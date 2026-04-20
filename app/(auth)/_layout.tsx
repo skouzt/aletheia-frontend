@@ -5,7 +5,7 @@ import { ActivityIndicator, View } from "react-native";
 
 export default function AuthLayout() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { hasCompletedOnboarding, isLoading } = useCheckOnboarding();
+  const { isLoading } = useCheckOnboarding(); // optional now
 
   if (!isLoaded || isLoading) {
     return (
@@ -16,15 +16,7 @@ export default function AuthLayout() {
   }
 
   if (isSignedIn) {
-    return (
-      <Redirect
-        href={
-          hasCompletedOnboarding
-            ? "/(tabs)/home"
-            : "/(onboarding_form)/personal"
-        }
-      />
-    );
+    return <Redirect href="/(tabs)/home" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

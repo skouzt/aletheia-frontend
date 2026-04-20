@@ -222,10 +222,10 @@ export default function SessionsUsageScreen() {
           <View className="flex-row items-start justify-between px-6 pb-4 pt-2">
             <View>
               <Text className="text-[30px] font-bold text-[#111827]">
-                Sessions & Usage
+                Your Journey
               </Text>
               <Text className="mt-1 text-sm font-medium text-[#4B5563]">
-                Your daily conversation activity
+                A reflection of your time and presence
               </Text>
             </View>
 
@@ -248,17 +248,17 @@ export default function SessionsUsageScreen() {
                 <View className="flex-row items-center gap-3">
                   <View className="h-3 w-3 rounded-full bg-[#10B981]" />
                   <Text className="text-xs font-semibold uppercase tracking-[1.4px] text-[#10B981]">
-                    Active now
+                   In the moment
                   </Text>
                 </View>
                 <Ionicons name="mic-outline" size={19} color="#6EE7B7" />
               </View>
 
               <Text className="text-2xl font-bold text-[#111827]">
-                Session active
+              You’re sharing right now
               </Text>
               <Text className="mt-1 text-sm text-[#4B5563]">
-                {ACTIVE_SESSION_MINUTES} minutes so far
+                {ACTIVE_SESSION_MINUTES} minutes shared
               </Text>
             </View>
 
@@ -268,7 +268,7 @@ export default function SessionsUsageScreen() {
                   <Ionicons name="timer-outline" size={19} color="#10B981" />
                 </View>
                 <Text className="text-base font-semibold text-[#111827]">
-                  Daily Allowance
+                Today’s Time
                 </Text>
               </View>
 
@@ -281,7 +281,7 @@ export default function SessionsUsageScreen() {
                   </Text>
                 </Text>
                 <Text className="mb-1 text-xs text-[#6B7280]">
-                  Resets at midnight
+                 A new day begins at midnight
                 </Text>
               </View>
 
@@ -293,14 +293,13 @@ export default function SessionsUsageScreen() {
               </View>
 
               <Text className="mt-3 text-xs text-[#6B7280]">
-                You have {remainingMinutes} minutes remaining for today&apos;s
-                sessions.
+                You still have {remainingMinutes} minutes to share today.
               </Text>
             </View>
 
             <View className="mt-5">
               <Text className="mb-3 px-1 text-lg font-bold text-[#111827]">
-                Subscription Plans
+                Your Plan
               </Text>
 
               <View className="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
@@ -337,7 +336,7 @@ export default function SessionsUsageScreen() {
 
             <View className="mt-5">
               <Text className="mb-3 px-1 text-lg font-bold text-[#111827]">
-                Recent Sessions
+               Your Reflections
               </Text>
 
               <View className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">

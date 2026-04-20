@@ -236,10 +236,10 @@ const onSignInPress = async () => {
           <View className="flex-1" />
           <View className="w-full px-4 mb-8">
             <Text className="text-4xl font-extrabold leading-10 text-[#0d1c17] text-center pb-2">
-              Your Non-Judgmental Listening Ear.
+              Speak your heart to Him.
             </Text>
             <Text className="text-sm leading-5 text-[#499c7f] text-center">
-              Lily is always here — find immediate, confidential support without the wait or the worry of being judged.
+               In His presence, there is no judgment — only grace, peace, and understanding.
             </Text>
           </View>
           <Image

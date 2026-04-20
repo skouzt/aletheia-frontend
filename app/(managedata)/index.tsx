@@ -105,11 +105,11 @@ export default function ManageDataScreen() {
               </View>
 
               <Text className="text-3xl text-gray-900 mb-2 font-bold">
-                Manage Your Data
+               Your Space, Your Journey
               </Text>
 
               <Text className="text-base text-gray-600 text-center max-w-xs">
-                You're in control of your session history.
+                What you share here is yours — you can keep it or let it go.
               </Text>
             </View>
           </View>
@@ -126,12 +126,11 @@ export default function ManageDataScreen() {
                 <View>
                   <Text className="text-lg font-bold flex-row items-center gap-2 text-gray-900">
                     <Ionicons name="time-outline" size={18} color="#D97706" />{" "}
-                    Clear Session History
+                   Let Go of Past Confessions
                   </Text>
 
                   <Text className="text-[15px] text-gray-600 leading-relaxed mt-2">
-                    This will remove your past session summaries from the app.
-                    Your account will remain active.
+                   This will gently remove your past reflections from this space. Your account will remain unchanged.
                   </Text>
                 </View>
 
@@ -141,7 +140,7 @@ export default function ManageDataScreen() {
                   className="h-12 rounded-xl bg-white border border-gray-200 items-center justify-center active:scale-[0.98]"
                 >
                   <Text className="font-bold text-gray-800">
-                    {loading ? "Clearing..." : "Clear History"}
+                    {loading ? "Clearing..." : "Clear My Reflections"}
                   </Text>
                 </Pressable>
               </View>
@@ -151,8 +150,7 @@ export default function ManageDataScreen() {
             <View className="flex-row gap-3 px-2">
               <Ionicons name="information-circle-outline" size={18} color="#019863" style={{ marginTop: 2 }} />
               <Text className="text-sm text-gray-500 leading-relaxed">
-                You'll be asked to confirm before this action is completed.
-                No data is removed immediately.
+               You’ll be asked to confirm before anything is removed. Take your time.
               </Text>
             </View>
           </ScrollView>
@@ -164,12 +162,11 @@ export default function ManageDataScreen() {
         <View className="flex-1 bg-black/40 items-center justify-center px-6">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm">
             <Text className="text-lg font-bold mb-2 text-gray-900">
-              Clear Session History?
+              Clear Your Reflections?
             </Text>
 
             <Text className="text-sm text-gray-600 leading-relaxed mb-6">
-              This will permanently remove your past session summaries.
-              This action cannot be undone.
+              This will permanently remove what you've shared here. This cannot be undone.
             </Text>
 
             <View className="flex-row gap-3">

@@ -72,7 +72,7 @@ export default function ExpandViewScreen() {
                     className="text-[28px] leading-tight text-[#0F172A]"
                     style={{ fontFamily: "LibreCaslonText-Bold" }}
                   >
-                    Session{"\n"}Summary
+                    Confession{"\n"}Reflection
                   </Text>
                   <Text className="text-sm text-[#019863] mt-1">
                     {date ? format(new Date(date), "MMMM d, yyyy • h:mm a") : ""}
@@ -99,36 +99,15 @@ export default function ExpandViewScreen() {
                       className="text-lg"
                       style={{ fontFamily: "LibreCaslonText-Bold" }}
                     >
-                      Emotional State
+                     State of Your Heart
                     </Text>
 
-                    {/* ✅ dynamic badge */}
                     <Text
                       className="px-3 py-1 rounded-full text-xs font-bold"
                       style={{ backgroundColor: emotion.bg, color: emotion.text }}
                     >
                       {emotion.label.toUpperCase()}
                     </Text>
-                  </View>
-
-                  <View className="flex-1">
-                    <View className="flex-row justify-between mb-2">
-                      <Text className="text-xs text-gray-500">Intensity</Text>
-                      <Text className="text-sm font-bold text-[#019863]">
-                        {intensityValue}/10
-                      </Text>
-                    </View>
-
-                    <View className="flex-row gap-1">
-                      {Array.from({ length: 10 }).map((_, i) => (
-                        <View
-                          key={i}
-                          className={`h-2 flex-1 rounded-full ${
-                            i < intensityValue ? "bg-[#019863]" : "bg-gray-200"
-                          }`}
-                        />
-                      ))}
-                    </View>
                   </View>
                 </View>
 
@@ -140,7 +119,7 @@ export default function ExpandViewScreen() {
                       className="text-lg flex-1"
                       style={{ fontFamily: "LibreCaslonText-Bold" }}
                     >
-                      What We Discussed
+                     What You Shared with Him
                     </Text>
                   </View>
 
@@ -148,7 +127,7 @@ export default function ExpandViewScreen() {
                     <Text className="text-[15px] text-gray-600 leading-relaxed">
                       {summary
                         ? decodeURIComponent(summary) // ✅ decode the encoded summary
-                        : "Detailed summary will be available soon."}
+                        : "Your reflection will appear here. Speak openly — He is listening."}
                     </Text>
                   </View>
                 </View>

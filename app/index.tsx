@@ -1,4 +1,3 @@
-import { useCheckOnboarding } from "@/hooks/useCheckOnboarding";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,7 +7,6 @@ import { Image, Linking, Text, View } from "react-native";
 
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { hasCompletedOnboarding, isLoading } = useCheckOnboarding();
   const { plan, refresh, loading: subLoading } = useSubscription();
 
   const [delayDone, setDelayDone] = useState(false);
@@ -27,13 +25,10 @@ export default function Index() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ✅ LOADING STATE
   if (
     !isLoaded ||
-    isLoading ||
     subLoading ||
-    !delayDone ||
-    hasCompletedOnboarding === null
+    !delayDone
   ) {
     return (
       <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
@@ -55,7 +50,7 @@ export default function Index() {
               resizeMode="contain"
             />
             <Text style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>
-              Getting things ready for you…
+              Preparing your space…
             </Text>
           </View>
         </LinearGradient>
@@ -69,10 +64,6 @@ export default function Index() {
 
   if (!isSignedIn) {
     return <Redirect href="/(auth)/auth" />;
-  }
-
-  if (!hasCompletedOnboarding) {
-    return <Redirect href="/(onboarding_form)/personal" />;
   }
 
   return <Redirect href="/(tabs)/home" />;

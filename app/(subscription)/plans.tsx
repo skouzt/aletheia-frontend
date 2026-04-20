@@ -56,16 +56,17 @@ const PLAN_DETAILS: Record<
     features: string[];
   }
 > = {
-  clarity: {
-    caption: "Steady support",
-    description:
-      "A balanced option for building a consistent monthly reflection habit.",
-    features: [
-      "10 monthly conversation sessions",
-      "40-minute sessions",
-      "Session summaries after every session",
-    ],
-  },
+      clarity: {
+      caption: "Grace & Forgiveness",
+      description:
+        "Bring what’s on your heart to Him. Find forgiveness, clarity, and peace — one conversation at a time.",
+      features: [
+        "10 confession sessions each month",
+        "Time to reflect deeply without distraction",
+        "Session summaries for spiritual insight",
+        "A safe and private space to open your heart",
+      ],
+    },
   insight: {
     caption: "Deeper access",
     description:
@@ -243,11 +244,10 @@ const PLAN_DETAILS: Record<
                     Membership
                   </Text>
                   <Text className="mt-2 text-center text-[28px] font-bold leading-[34px] text-[#101816]">
-                    Choose the pace that fits your month
+                    Find peace through confession
                   </Text>
                   <Text className="mt-3 max-w-[310px] text-center text-sm leading-6 text-[#5D6E67]">
-                    Start with Clarity or move up to Insight for more sessions
-                    and deeper monthly support.
+                    Speak freely, reflect deeply, and experience grace — anytime you need it.
                   </Text>
                 </View>
 
@@ -299,13 +299,7 @@ const PLAN_DETAILS: Record<
                 onPress={() => setSelectedPlan("clarity")}
               />
 
-              <PlanCard
-                plan="insight"
-                selected={selectedPlan === "insight"}
-                isCurrent={isCurrentPlan("insight")}
-                popular
-                onPress={() => setSelectedPlan("insight")}
-              />
+             
             </View>
 
             <View className="mx-5 mt-4 rounded-[22px] border border-[#DDE7E2] bg-white p-4">
@@ -348,7 +342,7 @@ const PLAN_DETAILS: Record<
                 ) : (
                   <>
                     <Text className="text-base font-bold text-white">
-                      {hasNoSubscription ? "Subscribe Now" : "Upgrade Now"}
+                      {hasNoSubscription ? "Begin Your Confession" : "Upgrade Now"}
                     </Text>
                     <Ionicons name="arrow-forward" size={18} color="white" />
                   </>

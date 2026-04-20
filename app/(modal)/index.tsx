@@ -290,7 +290,7 @@ const { sessionState, isPaused, pauseSession, resumeSession } =
       }
 
       if (permissionStatus !== "granted") {
-        Alert.alert("Permission Required", "Microphone access is required.");
+        Alert.alert("Permission Required", "Please allow microphone access to begin your reflection.");
         return false;
       }
 
@@ -298,7 +298,7 @@ const { sessionState, isPaused, pauseSession, resumeSession } =
       return true;
     } catch (err) {
       console.error("Start call failed:", err);
-      Alert.alert("Connection Error", "Unable to connect to Lily.");
+      Alert.alert("Connection Error", "Connection couldn’t be established. Please try again.");
       return false;
     }
   }, [roomName, startCall]);
@@ -398,7 +398,7 @@ const handlePauseResume = useCallback(() => {
             className="text-xl font-semibold text-[#2D3A3A]"
             style={{ fontFamily: 'LibreCaslonText-Bold' }}
           >
-            Mindful Conversation
+            A Moment With Him
           </Text>
           
           
@@ -433,7 +433,7 @@ const handlePauseResume = useCallback(() => {
           <View className="px-6 mb-4">
             <View className="p-4 rounded-2xl bg-[#C8DCCF]/40">
               <Text className="text-xs font-semibold text-[#019863] mb-2">
-                Lily
+                Guide
               </Text>
               <Text className="text-sm text-[#2D3A3A] leading-5">
                 {assistantMessage}
@@ -446,7 +446,7 @@ const handlePauseResume = useCallback(() => {
           <View className="px-6 mb-4">
             <View className="p-4 rounded-2xl bg-white/90">
               <Text className="text-xs text-[#2D3A3A]/60 mb-2">
-                You
+                What You Shared
               </Text>
               <Text className="text-sm text-[#2D3A3A] leading-5">
                 {transcript}
@@ -528,7 +528,7 @@ const handlePauseResume = useCallback(() => {
                   className="text-white font-bold text-base tracking-wide"
                   style={{ fontFamily: 'LibreCaslonText-Bold' }}
                 >
-                  {isInCall ? "END SESSION" : "START SESSION"}
+                  {isInCall ? "End Reflection" : "Begin Confession"}
                 </Text>
               )}
             </Pressable>

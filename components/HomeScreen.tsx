@@ -15,16 +15,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LiquidWaveVoiceButton } from "./AnimatedVoiceButton";
 
 const GREETINGS = [
-  "Hi. Take a deep breath.\nLet's talk it through.",
-  "I'm listening.\nWhat's on your mind today?",
-  "Pause for a moment.\nHow are you really feeling?",
-  "Take your time.\nI'm here to walk with you.",
-  "Let it all out.\nThis is a safe space.",
-  "Take a slow breath in.\nReady to share?",
-  "A new moment.\nA new chance to talk.",
-  "Softly now.\nTell me what's happening.",
-  "Center yourself.\nI'm ready when you are.",
-  "Peace starts here.\nWhat's bothering you?",
+  "Come as you are.\nHe is listening.",
+  "Lay your burdens down.\nSpeak freely.",
+  "You are not alone.\nHe hears your heart.",
+  "Take a quiet moment.\nShare what’s within.",
+  "Bring it to Him.\nThere is grace here.",
+  "Speak without fear.\nYou are understood.",
+  "Whatever you carry,\nplace it before Him.",
+  "In His presence,\nthere is peace.",
+  "Open your heart.\nYou are heard.",
+  "Let it out.\nGrace meets you here.",
 ];
 
 export default function HomeScreen() {
@@ -175,7 +175,7 @@ const handleStartSession = async () => {
 
           <Animated.View style={[animatedHintStyle, { marginTop: 24 }]}>
             <Text className="text-slate-400 text-xs tracking-widest uppercase">
-              Begin when you’re ready
+              Speak when your heart is ready
             </Text>
           </Animated.View>
         </View>

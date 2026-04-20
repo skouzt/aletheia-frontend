@@ -1,9 +1,9 @@
+import stressManagementAnimation from "@/assets/images/Stress Management.lottie";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import LottieView from "lottie-react-native";
-import stressManagementAnimation from "@/assets/images/Stress Management.lottie";
+import { useState } from "react";
 import {
   Image,
   Pressable,
@@ -85,28 +85,25 @@ export default function UsageLimitScreen() {
             <View className="items-center px-8 pt-5">
               <View className="rounded-full border border-[#D8E9DF] bg-[#F0F8F4] px-4 py-2">
                 <Text className="text-xs font-semibold uppercase tracking-[1.4px] text-[#0F9C63]">
-                  Daily limit reached
+                 Time to rest
                 </Text>
               </View>
 
               <Text className="mt-4 text-center text-[34px] leading-[40px] text-[#1F2321]">
-                Time for a Mindful Reset
+                Rest in His Presence
               </Text>
 
               <Text className="mt-4 max-w-[320px] text-center text-base leading-7 text-[#5C615D]">
-                You gave yourself {DAILY_LIMIT_MINUTES} focused minutes today.
-                Great consistency. Pause here, breathe, and return tomorrow with
-                a fresh mind.
+                You’ve shared your heart today. Take this moment to rest, knowing He hears you. Return tomorrow for a new beginning.
               </Text>
 
               <View className="mt-9 w-full rounded-2xl border border-[#E6ECE8] bg-white p-6 shadow-sm">
                 <View className="mb-3 flex-row items-center justify-between">
                   <Text className="text-sm font-medium text-[#626664]">
-                    Daily Reflection
+                    Today’s Offering
                   </Text>
                   <Text className="text-sm font-semibold text-[#019863]">
-                    {DAILY_LIMIT_MINUTES} of {DAILY_LIMIT_MINUTES} mins used
-                    today
+                    {DAILY_LIMIT_MINUTES} minutes given today
                   </Text>
                 </View>
 
@@ -117,7 +114,7 @@ export default function UsageLimitScreen() {
                 <View className="mt-4 flex-row items-center justify-center gap-1.5">
                   <Ionicons name="checkmark-circle" size={16} color="#0F9C63" />
                   <Text className="text-xs font-semibold uppercase tracking-[1.3px] text-[#019863]">
-                    Limit reached for today
+                   You’ve done enough for today
                   </Text>
                 </View>
               </View>
@@ -127,7 +124,7 @@ export default function UsageLimitScreen() {
                 className="mt-8 h-14 w-full items-center justify-center rounded-full bg-[#0F9C63] shadow-sm active:scale-[0.98]"
               >
                 <Text className="text-lg font-semibold text-white">
-                  Continue Tomorrow
+                  Return Tomorrow
                 </Text>
               </Pressable>
             </View>

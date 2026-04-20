@@ -120,7 +120,7 @@ export default function TrialOfferScreen() {
                 letterSpacing: 0.5,
               }}
             >
-              3 days free
+             3 days of peace
             </Text>
           </View>
 
@@ -153,7 +153,7 @@ export default function TrialOfferScreen() {
               textAlign: "center",
             }}
           >
-            After trial, $14/month billed automatically
+            After trial, continue your journey for $14/month
           </Text>
         </LinearGradient>
 
@@ -197,7 +197,7 @@ export default function TrialOfferScreen() {
                   marginTop: 2,
                 }}
               >
-                sessions / month
+               confessions / month
               </Text>
             </View>
 
@@ -226,7 +226,7 @@ export default function TrialOfferScreen() {
                   marginTop: 2,
                 }}
               >
-                daily limit
+                time for reflection
               </Text>
             </View>
           </View>
@@ -245,7 +245,7 @@ export default function TrialOfferScreen() {
           <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
             <TimelineItem
               title="TODAY"
-              text="Full access unlocked. Start your first session whenever you're ready."
+              text="Begin your first confession. Speak freely — He is listening."
               active
               marker="1"
               showLine
@@ -253,14 +253,14 @@ export default function TrialOfferScreen() {
 
             <TimelineItem
               title="DAY 2"
-              text="We'll send a gentle reminder before your trial ends."
+              text="Take a moment to reflect again and continue your journey."
               marker="2"
               showLine
             />
 
             <TimelineItem
               title="DAY 3"
-              text="Trial ends. Cancel before this and pay nothing at all."
+              text="Continue your journey in faith, or cancel anytime with no charge. "
               marker="3"
             />
           </View>
@@ -292,7 +292,7 @@ export default function TrialOfferScreen() {
               <Text
                 style={{ fontSize: 16, fontWeight: "500", color: "#FFFFFF" }}
               >
-                Start my free trial
+                Begin My Confession
               </Text>
             )}
           </Pressable>
@@ -308,7 +308,7 @@ export default function TrialOfferScreen() {
                 color: "#9A9080",
               }}
             >
-              No commitment · Cancel anytime
+              Private · No judgment · Cancel anytime
             </Text>
           </View>
         </View>

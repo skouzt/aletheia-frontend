@@ -142,7 +142,7 @@ const handleStartSession = async () => {
               letterSpacing: 1.5,
             }}
           >
-            Lily
+            A Moment With Him
           </Text>
         </Animated.View>
 

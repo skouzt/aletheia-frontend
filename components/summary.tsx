@@ -1,31 +1,27 @@
+import {
+  ArrowRight,
+  LilyPageTitle,
+  LilyScreen,
+  LilyScroll,
+  LilySectionTitle,
+} from '@/components/lily/ui';
+import { LilyColors, LilyFonts } from '@/constants/lily';
 import { useAuth } from '@clerk/clerk-expo';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { markSummariesFresh, shouldRevalidate } from '@/state/summariesFreshness';
 import { format } from 'date-fns';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  Image,
-  RefreshControl,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  useColorScheme,
-  View
-} from 'react-native';
+import { Alert, TouchableOpacity, RefreshControl, ScrollView, Text, View } from 'react-native';
 import {
   createAnimatedComponent,
   useAnimatedProps,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-
-const CHART_HEIGHT = 150;
+const CHART_HEIGHT = 104;
 const CHART_WIDTH = 472;
 const PAGE_SIZE = 10;
 
@@ -89,109 +85,149 @@ function encodeForUrl(text: string): string {
   return encodeURIComponent(text.replace(/\n/g, ' '));
 }
 
-
+/**
+ * Mood chips stay inside the mint family on purpose — the design brief calls for a
+ * journal, not a dashboard, so a hard day is never coloured like an alarm.
+ */
 function getEmotionInfo(intensity: any) {
   try {
     const value = Math.min(10, Math.max(1, Math.round(Number(intensity) || 7)));
-    const map = INTENSITY_MAP[value - 1] || INTENSITY_MAP[6];
-    let color = '#10B981';
-    if (value >= 7) color = '#EF4444';
-    else if (value >= 4) color = '#F59E0B';
-    return { label: map.label, color };
+    const label = (INTENSITY_MAP[value - 1] || INTENSITY_MAP[6]).label;
+
+    if (value >= 8) return { label, color: LilyColors.accentBright, tint: 'rgba(110,242,176,0.12)' };
+    if (value >= 4) return { label, color: LilyColors.textSoft, tint: 'rgba(255,255,255,0.07)' };
+    return { label, color: LilyColors.accent, tint: 'rgba(63,191,127,0.14)' };
   } catch {
-    return { label: 'Neutral', color: '#10B981' };
+    return { label: 'Neutral', color: LilyColors.textSoft, tint: 'rgba(255,255,255,0.07)' };
   }
 }
 
+const INSIGHT_CARDS = [
+  {
+    icon: '💡',
+    tint: 'rgba(63,191,127,0.16)',
+    title: 'Patterns Noticed',
+    status: 'Coming soon',
+    body: 'Lily will notice patterns in your sessions and help you understand recurring emotional themes.',
+  },
+  {
+    icon: '🗝️',
+    tint: 'rgba(110,242,176,0.14)',
+    title: 'Key Takeaways',
+    status: 'Coming soon',
+    body: 'Important insights and reflections from your sessions will be gathered here for you.',
+  },
+];
+
 const StaticInsights = memo(() => (
-  <View className="px-4 py-4" key="static-insights">
-    <Text
-      className="text-lg font-semibold text-text-light mb-3"
-      style={{ fontFamily: 'LibreCaslonText-Bold' }}
-    >
+  <View key="static-insights">
+    <LilySectionTitle style={{ paddingTop: 8, paddingHorizontal: 18, paddingBottom: 9 } as never}>
       Insights from Lily
-    </Text>
+    </LilySectionTitle>
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingRight: 8 }}
+      contentContainerStyle={{ gap: 10, paddingHorizontal: 18, paddingBottom: 4 }}
     >
-      <View className="flex-row gap-4">
-        <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex-col" style={{ width: 256 }}>
-          <View className="flex-row items-center gap-3 mb-3">
-            <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: '#D8BFD8' }}>
-              <MaterialCommunityIcons name="lightbulb-outline" size={20} color="#fff" />
+      {INSIGHT_CARDS.map((card) => (
+        <View
+          key={card.title}
+          style={{
+            width: 210,
+            backgroundColor: LilyColors.surfaceRaisedAlt,
+            borderWidth: 1,
+            borderColor: LilyColors.hairlineFaint,
+            borderRadius: 18,
+            paddingHorizontal: 13,
+            paddingTop: 13,
+            paddingBottom: 12,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+            <View
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: card.tint,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 13 }}>{card.icon}</Text>
             </View>
-            <View>
-              <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                Patterns Noticed
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontFamily: LilyFonts.sansSemi,
+                  color: LilyColors.textPrimary,
+                }}
+              >
+                {card.title}
               </Text>
-              <Text className="text-sm text-gray-500">Coming soon</Text>
+              <Text
+                style={{
+                  fontSize: 10.5,
+                  fontFamily: LilyFonts.sans,
+                  color: LilyColors.textFaint,
+                  marginTop: 1,
+                }}
+              >
+                {card.status}
+              </Text>
             </View>
           </View>
-          <Text className="text-sm text-text-light mb-4">
-            Lily will notice patterns in your sessions and help you understand recurring emotional themes.
-          </Text>
-          <TouchableOpacity
-            disabled
-            className="h-10 rounded-lg items-center justify-center mt-auto"
-            style={{ backgroundColor: 'rgba(1,152,99,0.2)' }}
-          >
-            <Text className="text-sm font-bold" style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold' }}>
-              Coming Soon
-            </Text>
-          </TouchableOpacity>
-        </View>
 
-        <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex-col" style={{ width: 256 }}>
-          <View className="flex-row items-center gap-3 mb-3">
-            <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: '#FFDAB9' }}>
-              <MaterialCommunityIcons name="key-outline" size={20} color="#fff" />
-            </View>
-            <View>
-              <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                Key Takeaways
-              </Text>
-              <Text className="text-sm text-gray-500">Coming soon</Text>
-            </View>
-          </View>
-          <Text className="text-sm text-text-light mb-4">
-            Important insights and breakthroughs from your sessions will be summarized here.
-          </Text>
-          <TouchableOpacity
-            disabled
-            className="h-10 rounded-lg items-center justify-center mt-auto"
-            style={{ backgroundColor: 'rgba(1,152,99,0.2)' }}
+          <Text
+            style={{
+              fontSize: 11.5,
+              lineHeight: 17.8,
+              fontFamily: LilyFonts.sans,
+              color: LilyColors.textSoft,
+              marginTop: 10,
+            }}
           >
-            <Text className="text-sm font-bold" style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold' }}>
+            {card.body}
+          </Text>
+
+          <View
+            style={{
+              marginTop: 11,
+              backgroundColor: 'rgba(63,191,127,0.10)',
+              borderRadius: 11,
+              padding: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{ fontSize: 11.5, fontFamily: LilyFonts.sansSemi, color: LilyColors.accentBright }}
+            >
               Coming Soon
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      ))}
     </ScrollView>
   </View>
 ));
+StaticInsights.displayName = 'StaticInsights';
 
 function SummarySkeleton() {
-  const scheme = useColorScheme();
-  const skeletonColor = scheme === "dark" ? "#374151" : "#E5E7EB";
-
   const blockStyle = {
-    borderRadius: 12,
-    backgroundColor: skeletonColor,
-    opacity: 0.5,
+    borderRadius: 24,
+    backgroundColor: LilyColors.surface,
+    borderWidth: 1,
+    borderColor: LilyColors.hairline,
   } as const;
 
   return (
-    <View className="px-4 py-4">
-      <View style={[blockStyle, { height: 28, width: 210, marginBottom: 12 }]} />
-      <View style={[blockStyle, { height: 170, marginBottom: 20 }]} />
-      <View style={[blockStyle, { height: 230, marginBottom: 20 }]} />
-      <View style={[blockStyle, { height: 120, marginBottom: 12 }]} />
-      <View style={[blockStyle, { height: 120, marginBottom: 12 }]} />
-      <View style={[blockStyle, { height: 120, marginBottom: 12 }]} />
-      <View style={[blockStyle, { height: 220, marginBottom: 12 }]} />
+    <View style={{ paddingHorizontal: 22, paddingTop: 8, gap: 16 }}>
+      <View style={[blockStyle, { height: 26, width: 190, borderRadius: 12 }]} />
+      <View style={[blockStyle, { height: 190 }]} />
+      <View style={[blockStyle, { height: 210 }]} />
+      <View style={[blockStyle, { height: 140 }]} />
+      <View style={[blockStyle, { height: 140 }]} />
     </View>
   );
 }
@@ -238,9 +274,8 @@ export default function SessionSummariesScreen() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMounted = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const getTokenRef = useRef(getToken); // ✅ stable ref for getToken
+  const getTokenRef = useRef(getToken);
 
-  // ✅ keep ref in sync without adding getToken to effect deps
   useEffect(() => {
     getTokenRef.current = getToken;
   }, [getToken]);
@@ -259,7 +294,7 @@ export default function SessionSummariesScreen() {
           timerRef.current = null;
         }
       };
-    }, [])
+    }, []),
   );
 
   const chartProgress = useSharedValue(0);
@@ -269,7 +304,7 @@ export default function SessionSummariesScreen() {
       chartProgress.value = 0;
       chartProgress.value = withTiming(1, { duration: 900 });
     }
-  }, [journey]);
+  }, [journey, chartProgress]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: (1 - chartProgress.value) * 1000,
@@ -287,153 +322,171 @@ export default function SessionSummariesScreen() {
     const lastRefresh = await AsyncStorage.getItem(LAST_REFRESH_KEY(userId));
     const now = Date.now();
     if (lastRefresh && now - parseInt(lastRefresh) < MIN_REFRESH_INTERVAL_MS) {
-      const waitSeconds = Math.ceil((MIN_REFRESH_INTERVAL_MS - (now - parseInt(lastRefresh))) / 1000);
-      Alert.alert("Please wait", `You can refresh again in ${waitSeconds} seconds`);
+      const waitSeconds = Math.ceil(
+        (MIN_REFRESH_INTERVAL_MS - (now - parseInt(lastRefresh))) / 1000,
+      );
+      Alert.alert('Please wait', `You can refresh again in ${waitSeconds} seconds`);
       return false;
     }
     await AsyncStorage.setItem(LAST_REFRESH_KEY(userId), now.toString());
     return true;
   }, [userId]);
 
-  const loadFromCache = useCallback(async (): Promise<boolean> => {
-    if (!userId) return false;
+  const loadFromCache = useCallback(async (): Promise<SessionsCache | null> => {
+    if (!userId) return null;
     try {
       const cached = await AsyncStorage.getItem(CACHE_KEY(userId));
-      if (!cached) return false;
+      if (!cached) return null;
       const parsed: SessionsCache = JSON.parse(cached);
-      if (!isMounted.current) return false;
+      if (!isMounted.current) return null;
       setSessions(parsed.sessions);
       setJourney(parsed.journey);
       setHasMore(parsed.hasMore);
       setHasSessions(parsed.sessions.length > 0);
-      return true;
+      return parsed;
     } catch (error) {
       console.error('Cache read error:', error);
-      return false;
+      return null;
     }
   }, [userId]);
 
-  const saveToCache = useCallback(async (data: SessionsCache) => {
-    if (!userId) return;
-    try {
-      await AsyncStorage.setItem(CACHE_KEY(userId), JSON.stringify(data));
-    } catch (error) {
-      console.error('Cache save error:', error);
-    }
-  }, [userId]);
-
-  const fetchFromBackend = useCallback(async (pageNumber: number, isRefresh: boolean = false): Promise<boolean> => {
-    if (!userId) return false;
-
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const token = await getTokenRef.current({ template: "backend-api" }); // ✅ use ref
-
-      const sessionsRes = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/therapy/sessions?page=${pageNumber}&page_size=${PAGE_SIZE}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true", 
-          },
-          signal: abortControllerRef.current.signal,
-        }
-      );
-
-      if (!sessionsRes.ok) {
-        if (sessionsRes.status === 429) {
-          Alert.alert("Rate limit", "Too many requests. Please try again later.");
-        }
-        throw new Error(`HTTP ${sessionsRes.status}`);
+  const saveToCache = useCallback(
+    async (data: SessionsCache) => {
+      if (!userId) return;
+      try {
+        await AsyncStorage.setItem(CACHE_KEY(userId), JSON.stringify(data));
+      } catch (error) {
+        console.error('Cache save error:', error);
       }
+    },
+    [userId],
+  );
 
-      const sessionsData = await sessionsRes.json();
+  const fetchFromBackend = useCallback(
+    async (pageNumber: number, isRefresh: boolean = false): Promise<boolean> => {
+      if (!userId) return false;
 
-      if (!sessionsData.sessions || sessionsData.sessions.length === 0) {
-        if (pageNumber === 0) {
-          if (!isMounted.current) return false;
-          setSessions([]);
-          setHasSessions(false);
-          setJourney([]);
-        }
-        setHasMore(false);
-        return false;
-      }
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = new AbortController();
 
-      if (pageNumber === 0) {
-        const journeyRes = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/api/v1/therapy/journey`,
+      try {
+        const token = await getTokenRef.current({ template: 'backend-api' });
+
+        const sessionsRes = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/api/v1/therapy/sessions?page=${pageNumber}&page_size=${PAGE_SIZE}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true", // ✅
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
             },
             signal: abortControllerRef.current.signal,
-          }
+          },
         );
 
-        let journeyData: JourneyPoint[] = [];
-        if (journeyRes.ok) {
-          const journeyJson = await journeyRes.json();
-          journeyData = journeyJson.journey || [];
+        if (!sessionsRes.ok) {
+          if (sessionsRes.status === 429) {
+            Alert.alert('Rate limit', 'Too many requests. Please try again later.');
+          }
+          throw new Error(`HTTP ${sessionsRes.status}`);
         }
 
-        if (!isMounted.current) return false;
+        const sessionsData = await sessionsRes.json();
 
-        setSessions(sessionsData.sessions);
-        setJourney(journeyData);
-        setHasMore(sessionsData.has_more);
-        setHasSessions(true);
+        if (!sessionsData.sessions || sessionsData.sessions.length === 0) {
+          if (pageNumber === 0) {
+            if (!isMounted.current) return false;
+            setSessions([]);
+            setHasSessions(false);
+            setJourney([]);
+          }
+          setHasMore(false);
+          return false;
+        }
 
-        await saveToCache({
-          sessions: sessionsData.sessions.slice(0, 10),
-          journey: journeyData,
-          hasMore: sessionsData.has_more,
-          fetchedAt: Date.now(),
-        });
-      } else {
-        if (!isMounted.current) return false;
-        setSessions(prev => [...prev, ...sessionsData.sessions]);
-        setHasMore(sessionsData.has_more);
-      }
+        if (pageNumber === 0) {
+          const journeyRes = await fetch(
+            `${process.env.EXPO_PUBLIC_API_URL}/api/v1/therapy/journey`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true',
+              },
+              signal: abortControllerRef.current.signal,
+            },
+          );
 
-      setPage(sessionsData.page);
-      return true;
+          let journeyData: JourneyPoint[] = [];
+          if (journeyRes.ok) {
+            const journeyJson = await journeyRes.json();
+            journeyData = journeyJson.journey || [];
+          }
 
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        console.log('Request aborted');
+          if (!isMounted.current) return false;
+
+          setSessions(sessionsData.sessions);
+          setJourney(journeyData);
+          setHasMore(sessionsData.has_more);
+          setHasSessions(true);
+
+          await saveToCache({
+            sessions: sessionsData.sessions.slice(0, 10),
+            journey: journeyData,
+            hasMore: sessionsData.has_more,
+            fetchedAt: Date.now(),
+          });
+          // Only cleared on a real success, so a failed revalidate leaves the
+          // cache marked stale and the next visit retries.
+          markSummariesFresh(userId);
+        } else {
+          if (!isMounted.current) return false;
+          setSessions((prev) => [...prev, ...sessionsData.sessions]);
+          setHasMore(sessionsData.has_more);
+        }
+
+        setPage(sessionsData.page);
+        return true;
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          return false;
+        }
+        console.error('Failed to fetch:', error);
         return false;
       }
-      console.error("Failed to fetch:", error);
-      return false;
-    }
-  }, [userId, saveToCache]); 
+    },
+    [userId, saveToCache],
+  );
 
-  const loadSessions = useCallback(async (pageNumber: number = 0, isRefresh: boolean = false) => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    if (pageNumber === 0 && !isRefresh) {
-      const hasCache = await loadFromCache();
-      if (hasCache) {
+  const loadSessions = useCallback(
+    async (pageNumber: number = 0, isRefresh: boolean = false) => {
+      if (!userId) {
         setLoading(false);
-        fetchFromBackend(0, false);
         return;
       }
-    }
 
-    setLoading(true);
-    const success = await fetchFromBackend(pageNumber, isRefresh);
-    if (!success && pageNumber === 0) setHasSessions(false);
-    setLoading(false);
-  }, [userId, loadFromCache, fetchFromBackend]);
+      if (pageNumber === 0 && !isRefresh) {
+        const cached = await loadFromCache();
+        if (cached) {
+          setLoading(false);
+          // Revalidate only when something could actually have changed. This used
+          // to fire on every visit, so the cache saved a spinner but never a
+          // request — which is what put therapy/sessions and therapy/journey in
+          // the log on every navigation.
+          if (shouldRevalidate(userId, cached.fetchedAt)) {
+            void fetchFromBackend(0, false);
+          }
+          return;
+        }
+      }
+
+      setLoading(true);
+      const success = await fetchFromBackend(pageNumber, isRefresh);
+      if (!success && pageNumber === 0) setHasSessions(false);
+      setLoading(false);
+    },
+    [userId, loadFromCache, fetchFromBackend],
+  );
 
   const onRefresh = useCallback(async () => {
     const canRefresh = await checkRefreshRateLimit();
@@ -458,7 +511,8 @@ export default function SessionSummariesScreen() {
       setLoading(false);
       setHasSessions(false);
     }
-  }, [userId]); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const journeyPath = useMemo(() => {
     if (!journey || journey.length < 2) return '';
@@ -469,65 +523,103 @@ export default function SessionSummariesScreen() {
   }, [journey]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background-light" edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+    <LilyScreen>
+      <LilyPageTitle>Summaries &amp; Insights</LilyPageTitle>
 
-      <View className="sticky top-0 z-10 bg-background-light px-4 pt-3 pb-2">
-        <View className="flex-row items-center justify-between">
-          <View className="w-12 items-start" />
-          <Text
-            className="flex-1 text-center text-xl font-bold text-text-light"
-            style={{ fontFamily: 'LibreCaslonText-Bold' }}
-          >
-            Summaries & Insights
-          </Text>
-          <View className="w-12 items-end" />
-        </View>
-      </View>
-
-      <ScrollView
-        className="flex-1 pb-24"
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      <LilyScroll
+        contentContainerStyle={{ paddingTop: 6, paddingBottom: 38 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={LilyColors.accent}
+            colors={[LilyColors.accent]}
+            progressBackgroundColor={LilyColors.surface}
+          />
+        }
       >
         {isReady ? (
           <>
             <StaticInsights />
 
             {journey.length >= 2 && (
-              <View className="px-4 py-2 space-y-4 mb-4">
-                <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+              <View>
+                <LilySectionTitle
+                  style={{ paddingTop: 20, paddingHorizontal: 18, paddingBottom: 9 } as never}
+                >
                   Your Emotional Journey
-                </Text>
-                <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-                  <View className="min-h-[180px]">
-                    <Svg
-                      width="100%"
-                      height={CHART_HEIGHT}
-                      viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
-                      preserveAspectRatio="none"
-                    >
-                      <Defs>
-                        <LinearGradient id="chartGradient" x1="236" y1="1" x2="236" y2={CHART_HEIGHT} gradientUnits="userSpaceOnUse">
-                          <Stop offset="0" stopColor="#AEC6CF" stopOpacity="0.4" />
-                          <Stop offset="1" stopColor="#AEC6CF" stopOpacity="0" />
-                        </LinearGradient>
-                      </Defs>
-                      <Path d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`} fill="url(#chartGradient)" />
-                      <AnimatedPath
-                        d={journeyPath}
-                        stroke="#AEC6CF"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        fill="none"
-                        strokeDasharray="1000"
-                        animatedProps={animatedProps}
-                      />
-                    </Svg>
-                  </View>
-                  <View className="flex-row justify-around mt-2">
+                </LilySectionTitle>
+                <View
+                  style={{
+                    marginHorizontal: 18,
+                    backgroundColor: LilyColors.surfaceRaisedAlt,
+                    borderWidth: 1,
+                    borderColor: LilyColors.hairlineFaint,
+                    borderRadius: 18,
+                    paddingTop: 14,
+                    paddingHorizontal: 13,
+                    paddingBottom: 10,
+                  }}
+                >
+                  <Svg
+                    width="100%"
+                    height={CHART_HEIGHT}
+                    viewBox={`-3 0 ${CHART_WIDTH + 6} ${CHART_HEIGHT}`}
+                    preserveAspectRatio="none"
+                  >
+                    <Defs>
+                      <LinearGradient
+                        id="lilyJourney"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2={CHART_HEIGHT}
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <Stop offset="0" stopColor={LilyColors.accent} stopOpacity="0.22" />
+                        <Stop offset="1" stopColor={LilyColors.accent} stopOpacity="0" />
+                      </LinearGradient>
+                    </Defs>
+                    <Path d={`${journeyPath} V ${CHART_HEIGHT} H 0 Z`} fill="url(#lilyJourney)" />
+                    <AnimatedPath
+                      d={journeyPath}
+                      stroke={LilyColors.accent}
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      fill="none"
+                      strokeDasharray="1000"
+                      animatedProps={animatedProps}
+                    />
+                    {journey.length > 0 && (
+                      <>
+                        <Circle cx={0} cy={intensityToY(journey[0].intensity)} r={4} fill={LilyColors.accent} />
+                        <Circle
+                          cx={CHART_WIDTH}
+                          cy={intensityToY(journey[journey.length - 1].intensity)}
+                          r={4}
+                          fill={LilyColors.accent}
+                        />
+                      </>
+                    )}
+                  </Svg>
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      paddingTop: 4,
+                      paddingHorizontal: 4,
+                    }}
+                  >
                     {journey.slice(-7).map((p, i) => (
-                      <Text key={i} className="text-xs font-bold text-gray-500">
+                      <Text
+                        key={i}
+                        style={{
+                          fontSize: 10,
+                          fontFamily: LilyFonts.sansSemi,
+                          color: LilyColors.textFaint,
+                        }}
+                      >
                         {safeFormatDate(p.date, 'EEE')}
                       </Text>
                     ))}
@@ -537,142 +629,225 @@ export default function SessionSummariesScreen() {
             )}
 
             {sessions.length > 0 && (
-              <View className="px-4 py-2 space-y-4 mb-4">
-                <Text className="text-lg font-semibold text-text-light mb-3" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
+              <View>
+                <LilySectionTitle
+                  style={{ paddingTop: 20, paddingHorizontal: 18, paddingBottom: 9 } as never}
+                >
                   Recent Sessions
-                </Text>
+                </LilySectionTitle>
 
-                {sessions.map((session, i) => {
-                  if (!session) return null;
-                  try {
-                    const emotion = getEmotionInfo(session.session_intensity);
-                    const dateStr = session.created_at || session.date;
-                    const sessionDate = new Date(dateStr);
+                <View style={{ gap: 9, paddingHorizontal: 18 }}>
+                  {sessions.map((session, i) => {
+                    if (!session) return null;
+                    try {
+                      const emotion = getEmotionInfo(session.session_intensity);
+                      const dateStr = session.created_at || session.date;
+                      const sessionDate = new Date(dateStr);
 
-                    if (isNaN(sessionDate.getTime())) {
+                      if (isNaN(sessionDate.getTime())) return null;
+
                       return (
-                        <View key={session.id} className="bg-red-100 p-4 m-4 rounded-xl">
-                          <Text className="text-red-600">Invalid session date</Text>
-                        </View>
-                      );
-                    }
+                        <TouchableOpacity
+                          key={session.id}
+                          onPress={() => {
+                            try {
+                              router.push({
+                                pathname: '/(expandleview)',
+                                params: {
+                                  date: session.created_at || session.date,
+                                  summary: encodeForUrl(session.summary),
+                                  intensity: String(session.session_intensity),
+                                },
+                              });
+                            } catch {
+                              Alert.alert('Error', 'Failed to open session details');
+                            }
+                          }}
+                          style={{
+                            backgroundColor: LilyColors.surfaceRaisedAlt,
+                            borderWidth: 1,
+                            borderColor: LilyColors.hairlineFaint,
+                            borderRadius: 18,
+                            paddingHorizontal: 14,
+                            paddingTop: 13,
+                            paddingBottom: 12,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontFamily: LilyFonts.sansSemi,
+                              color: LilyColors.textPrimary,
+                            }}
+                          >
+                            Session on {safeFormatDate(sessionDate, 'MMMM d, yyyy')}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 10.5,
+                              fontFamily: LilyFonts.sans,
+                              color: LilyColors.textFaint,
+                              marginTop: 2,
+                            }}
+                          >
+                            {safeFormatDate(sessionDate, 'h:mm a')}
+                          </Text>
 
-                    return (
-                      <View key={session.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4">
-                        <View className="flex-row justify-between items-start mb-3">
-                          <View>
-                            <Text className="text-base font-semibold text-text-light" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                              Session on {safeFormatDate(sessionDate, 'MMMM d, yyyy')}
-                            </Text>
-                            <Text className="text-sm text-gray-500">
-                              {safeFormatDate(sessionDate, 'h:mm a')}
-                            </Text>
-                          </View>
-                        </View>
+                          <Text
+                            style={{
+                              fontSize: 12.5,
+                              fontFamily: LilyFonts.sansSemi,
+                              color: LilyColors.textStrong,
+                              marginTop: 9,
+                            }}
+                          >
+                            {session.title}
+                          </Text>
 
-                        <Text className="text-base font-semibold text-text-light mb-2" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                          {session.title}
-                        </Text>
-
-                        <View className="flex-row items-center justify-between">
-                          <View className="flex-row items-center gap-2">
-                            <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${emotion.color}22` }}>
-                              <Text className="text-sm font-medium" style={{ color: emotion.color }}>
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 8,
+                              marginTop: 10,
+                            }}
+                          >
+                            <View
+                              style={{
+                                backgroundColor: emotion.tint,
+                                borderRadius: 100,
+                                paddingVertical: 4,
+                                paddingHorizontal: 9,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 10.5,
+                                  fontFamily: LilyFonts.sansMedium,
+                                  color: emotion.color,
+                                }}
+                              >
                                 {emotion.label}
                               </Text>
                             </View>
+                            <View style={{ flex: 1 }} />
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                              <Text
+                                style={{
+                                  fontSize: 11.5,
+                                  fontFamily: LilyFonts.sansSemi,
+                                  color: LilyColors.accentBright,
+                                }}
+                              >
+                                View Details
+                              </Text>
+                              <ArrowRight />
+                            </View>
                           </View>
+                        </TouchableOpacity>
+                      );
+                    } catch {
+                      return null;
+                    }
+                  })}
 
-                          <TouchableOpacity
-                            className="flex-row items-center gap-2"
-                            onPress={() => {
-                              try {
-                                router.push({
-                                  pathname: '/(expandleview)',
-                                  params: {
-                                    date: session.created_at || session.date,
-                                    summary: encodeForUrl(session.summary),
-                                    intensity: String(session.session_intensity),
-                                  },
-                                });
-                              } catch (error) {
-                                Alert.alert("Error", "Failed to open session details");
-                              }
-                            }}
-                          >
-                            <Text
-                              numberOfLines={1}
-                              allowFontScaling={false}
-                              style={{ color: '#019863', fontFamily: 'LibreCaslonText-Bold', fontSize: 10, minWidth: 50 }}
-                            >
-                              View Details
-                            </Text>
-                            <MaterialCommunityIcons name="arrow-right" size={16} color="#019863" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    );
-                  } catch (error) {
-                    return (
-                      <View key={`error-${i}`} className="bg-red-100 p-4 m-4 rounded-xl">
-                        <Text className="text-red-600">Error rendering session</Text>
-                      </View>
-                    );
-                  }
-                })}
-
-                {!!hasMore && ( // ✅ cast to boolean to fix TS2322
-                  <TouchableOpacity
-                    onPress={loadMore}
-                    disabled={loading}
-                    className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm items-center justify-center mt-2"
-                  >
-                    <Text className="text-[#019863] font-semibold" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                      {loading ? 'Loading...' : 'Load More'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                  {!!hasMore && (
+                    <TouchableOpacity
+                      onPress={loadMore}
+                      disabled={loading}
+                      style={{
+                        backgroundColor: LilyColors.surfaceRaisedAlt,
+                        borderWidth: 1,
+                        borderColor: LilyColors.hairlineFaint,
+                        borderRadius: 18,
+                        padding: 13,
+                        alignItems: 'center',
+                        marginTop: 2,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: LilyFonts.sansSemi,
+                          fontSize: 14,
+                          color: LilyColors.accent,
+                        }}
+                      >
+                        {loading ? 'Loading…' : 'Load More'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             )}
 
             {hasSessions === false && !loading && (
-              <View className="px-6 pt-8 items-center">
-                <Image
-                  source={require('@/assets/images/summary.png')}
-                  style={{ width: 180, height: 180 }}
-                  resizeMode="contain"
-                />
+              <View style={{ paddingHorizontal: 34, paddingTop: 48, alignItems: 'center' }}>
+                <Text style={{ fontSize: 34 }}>🌱</Text>
                 <Text
-                  className="text-lg text-text-light mt-5 text-center"
-                  style={{ fontFamily: 'LibreCaslonText-Bold', letterSpacing: 0.1 }}
+                  style={{
+                    fontFamily: LilyFonts.serif,
+                    fontSize: 22,
+                    color: LilyColors.textPrimary,
+                    marginTop: 16,
+                    textAlign: 'center',
+                  }}
                 >
-                  No sessions yet
+                  Nothing to look back on yet
                 </Text>
-                <Text className="text-sm text-gray-400 text-center mt-2 px-2" style={{ lineHeight: 20 }}>
-                  Your summaries and insights will appear here once you've completed a session.
+                <Text
+                  style={{
+                    fontSize: 13.5,
+                    lineHeight: 22,
+                    fontFamily: LilyFonts.sans,
+                    color: LilyColors.textFaint,
+                    textAlign: 'center',
+                    marginTop: 8,
+                  }}
+                >
+                  Once you and Lily have talked, your reflections will gather here.
                 </Text>
                 <TouchableOpacity
-                  className="mt-5 px-6 py-2.5 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: '#F3F4F6' }}
-                  onPress={() => router.push('/(tabs)/home')}
+                  onPress={() => router.push('/(chat)')}
+                  style={{
+                    marginTop: 22,
+                    backgroundColor: LilyColors.accent,
+                    borderRadius: 100,
+                    paddingVertical: 13,
+                    paddingHorizontal: 24,
+                  }}
                 >
-                  <Text className="text-sm text-gray-500" style={{ fontFamily: 'LibreCaslonText-Bold' }}>
-                    Start a session
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontFamily: LilyFonts.sansSemi,
+                      color: LilyColors.ground,
+                    }}
+                  >
+                    Talk to Lily
                   </Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {loading && hasSessions === null && (
-              <View className="px-6 pt-8 items-center">
-                <Text className="text-gray-400">Loading...</Text>
-              </View>
+            {sessions.length > 0 && (
+              <Text
+                style={{
+                  textAlign: 'center',
+                  fontSize: 10,
+                  fontFamily: LilyFonts.sans,
+                  color: LilyColors.textFaint,
+                  paddingTop: 16,
+                  paddingHorizontal: 22,
+                }}
+              >
+                Summaries are written by Lily, kept only on your device.
+              </Text>
             )}
           </>
         ) : (
           <SummarySkeleton />
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </LilyScroll>
+    </LilyScreen>
   );
 }

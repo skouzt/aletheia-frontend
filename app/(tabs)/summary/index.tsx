@@ -1,12 +1,12 @@
-import { ScreenWrapper } from '@/components/screen-wrapper'
-import SessionSummariesScreen from '@/components/summary'
+import { LilyChrome } from '@/components/lily/LilyChrome';
+import SessionSummariesScreen from '@/components/summary';
+import { StatusBar } from 'expo-status-bar';
 
-function SummaryRoute() {
+export default function Route() {
   return (
-    <ScreenWrapper>
+    <LilyChrome activeTab="days">
+      <StatusBar style="light" />
       <SessionSummariesScreen />
-    </ScreenWrapper>
-  )
+    </LilyChrome>
+  );
 }
-
-export default SummaryRoute

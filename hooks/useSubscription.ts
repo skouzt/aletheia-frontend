@@ -1,194 +1,236 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Plan = "none" | "clarity" | "insight";
+/** Lily sells unlimited conversations, billed monthly or yearly. No metering. */
+export type Plan = "none" | "monthly" | "yearly";
+
+export type SubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "expired"
+  | "cancelled"
+  | "past_due"
+  | "none";
 
 interface SubscriptionState {
   plan: Plan;
-  status: "active" | "expired" | "cancelled" | "past_due" | "none";
+  status: SubscriptionStatus;
   expiresAt?: string;
   nextBillingDate?: string;
-  sessionsPerMonth: number;
-  minutesPerSession: number;
-  sessionsUsed: number;
-  sessionsRemaining: number;
+  trialEnd?: string;
+  isTrialing: boolean;
+  /** What they're actually billed — resolved server-side, not from device locale. */
+  region?: string;
+  currency?: string;
+  amount?: number;
+  period?: string;
   canStartSession: boolean;
   loading: boolean;
 }
 
-// ✅ Single source of truth (frontend)
-const PLAN_CONFIG: Record<
-  Exclude<Plan, "none">,
-  { sessions: number; minutes: number }
-> = {
-  clarity: { sessions: 10, minutes: 40 },
-  insight: { sessions: 15, minutes: 40 },
+const EMPTY: SubscriptionState = {
+  plan: "none",
+  status: "none",
+  isTrialing: false,
+  canStartSession: false,
+  loading: false,
 };
 
-export function useSubscription() {
-  const { getToken, isSignedIn } = useAuth();
+const PLANS: Plan[] = ["monthly", "yearly"];
+const STATUSES: SubscriptionStatus[] = [
+  "active",
+  "trialing",
+  "expired",
+  "cancelled",
+  "past_due",
+];
 
-  const isInitialCheckDoneRef = useRef(false);
-  const isFetchingRef = useRef(false);
-  const lastFetchTimeRef = useRef(0);
+/** Statuses that grant access. Mirrors GRANTING_STATUSES in subscription_service.py. */
+const GRANTING: SubscriptionStatus[] = ["active", "trialing", "cancelled"];
 
-  const [subscription, setSubscription] = useState<SubscriptionState>({
-    plan: "none",
-    status: "none",
-    sessionsPerMonth: 0,
-    minutesPerSession: 0,
-    sessionsUsed: 0,
-    sessionsRemaining: 0,
-    canStartSession: false,
-    loading: true,
-  });
+interface SubscriptionPayload {
+  status?: string;
+  plan?: string;
+  expires_at?: string;
+  next_billing_date?: string;
+  trial_end?: string;
+  is_trialing?: boolean;
+  region?: string;
+  currency?: string;
+  amount?: number;
+  period?: string;
+}
 
-  const fetchSubscription = useCallback(async (force = false) => {
-    if (isFetchingRef.current) return;
+/**
+ * Whether the user may talk to Lily right now.
+ *
+ * This used to come from a second request to /usage/check. That endpoint stopped
+ * metering anything when the plans went unlimited — it just re-answers the
+ * subscription question — so it doubled the request count to compute one boolean.
+ * /billing/me/subscription already returns the status and both expiry dates, so
+ * the same answer is derivable here.
+ *
+ * Kept faithful to services/subscription_service.get_subscription_state, including
+ * the expiry check: a row can still say "active" past its expires_at.
+ */
+function deriveCanStartSession(
+  status: SubscriptionStatus,
+  payload: SubscriptionPayload,
+): boolean {
+  if (!GRANTING.includes(status)) return false;
 
-    const now = Date.now();
-    if (
-      !force &&
-      now - lastFetchTimeRef.current < 5000 &&
-      isInitialCheckDoneRef.current
-    ) {
-      return;
-    }
+  const isTrialing = status === "trialing";
+  const raw = isTrialing ? payload.trial_end : payload.expires_at;
+  const expiry = raw ? Date.parse(raw) : NaN;
 
-    isFetchingRef.current = true;
-    lastFetchTimeRef.current = now;
+  if (!Number.isNaN(expiry)) return expiry >= Date.now();
 
-    setSubscription((prev) => ({ ...prev, loading: true }));
+  // Cancelled with no known end date — nothing left to honour, so treat it as over.
+  return status !== "cancelled";
+}
 
+/* ── Shared store ────────────────────────────────────────────────────────────
+ *
+ * The throttle used to live in per-instance refs, which meant it never fired
+ * across components: five call sites mounting together produced five independent
+ * fetches. Hoisting the state to the module makes concurrent mounts share one
+ * request and one result.
+ */
+
+type Listener = (state: SubscriptionState) => void;
+
+const TTL_MS = 5000;
+
+let cache: SubscriptionState = { ...EMPTY, loading: true };
+let cachedUserId: string | null = null;
+let listeners = new Set<Listener>();
+let inFlight: Promise<void> | null = null;
+let lastFetchedAt = 0;
+
+function emit() {
+  for (const listener of listeners) listener(cache);
+}
+
+function setCache(next: SubscriptionState) {
+  cache = next;
+  emit();
+}
+
+/** Drop everything when the signed-in user changes, so account B never reads A's plan. */
+function resetFor(userId: string | null) {
+  cachedUserId = userId;
+  lastFetchedAt = 0;
+  inFlight = null;
+  cache = { ...EMPTY, loading: Boolean(userId) };
+}
+
+async function loadSubscription(
+  getToken: (opts: { template: string }) => Promise<string | null>,
+  isSignedIn: boolean,
+  force: boolean,
+): Promise<void> {
+  // The actual dedupe: concurrent callers await the same request.
+  if (inFlight) return inFlight;
+  if (!force && lastFetchedAt && Date.now() - lastFetchedAt < TTL_MS) return;
+
+  lastFetchedAt = Date.now();
+
+  inFlight = (async () => {
     try {
-      // ❌ Not signed in
       if (!isSignedIn) {
-        setSubscription({
-          plan: "none",
-          status: "none",
-          sessionsPerMonth: 0,
-          minutesPerSession: 0,
-          sessionsUsed: 0,
-          sessionsRemaining: 0,
-          canStartSession: false,
-          loading: false,
-        });
-        isInitialCheckDoneRef.current = true;
+        setCache({ ...EMPTY });
         return;
       }
 
       const token = await getToken({ template: "backend-api" });
-      if (!token) throw new Error("No authentication token available");
-
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL;
-
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      // ✅ Parallel fetch
-      const [subRes, usageRes] = await Promise.all([
-        fetch(`${baseUrl}/api/v1/billing/me/subscription`, {
-          headers,
-          cache: "no-store",
-        }),
-        fetch(`${baseUrl}/api/v1/usage/check`, {
-          headers,
-          cache: "no-store",
-        }),
-      ]);
-
-      // ❌ Unauthorized
-      if (subRes.status === 401) {
-        setSubscription({
-          plan: "none",
-          status: "none",
-          sessionsPerMonth: 0,
-          minutesPerSession: 0,
-          sessionsUsed: 0,
-          sessionsRemaining: 0,
-          canStartSession: false,
-          loading: false,
-        });
-        isInitialCheckDoneRef.current = true;
+      if (!token) {
+        setCache({ ...EMPTY });
         return;
       }
 
-      if (!subRes.ok) {
-        throw new Error(`HTTP ${subRes.status}: ${await subRes.text()}`);
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL;
+      const res = await fetch(`${baseUrl}/api/v1/billing/me/subscription`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        cache: "no-store",
+      });
+
+      if (res.status === 401) {
+        setCache({ ...EMPTY });
+        return;
+      }
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
       }
 
-      const sub: {
-        status?: string;
-        plan?: string;
-        expires_at?: string;
-        next_billing_date?: string;
-      } = await subRes.json();
+      const sub: SubscriptionPayload = await res.json();
 
-      // ✅ Safe plan parsing
-      const safePlan: Plan =
-        sub.plan === "clarity" || sub.plan === "insight"
-          ? sub.plan
-          : "none";
+      const plan = PLANS.includes(sub.plan as Plan) ? (sub.plan as Plan) : "none";
+      const status = STATUSES.includes(sub.status as SubscriptionStatus)
+        ? (sub.status as SubscriptionStatus)
+        : "none";
 
-      const planConfig =
-        safePlan !== "none" ? PLAN_CONFIG[safePlan] : null;
-
-      const sessionsPerMonth = planConfig?.sessions ?? 0;
-      const minutesPerSession = planConfig?.minutes ?? 0;
-
-      // ✅ Usage fetch (safe)
-      let sessionsUsed = 0;
-      let canStartSession = false;
-
-      if (usageRes.ok) {
-        const usage: {
-          allowed?: boolean;
-          sessions_used?: number;
-        } = await usageRes.json();
-
-        sessionsUsed = usage.sessions_used ?? 0;
-        canStartSession = usage.allowed ?? false;
-      }
-
-      const safeStatus: SubscriptionState["status"] =
-        sub.status === "active" ||
-        sub.status === "expired" ||
-        sub.status === "cancelled" ||
-        sub.status === "past_due"
-          ? sub.status
-          : "none";
-
-      const isActive = safeStatus === "active";
-
-      setSubscription({
-        plan: safePlan,
-        status: safeStatus,
+      setCache({
+        plan,
+        status,
         expiresAt: sub.expires_at,
         nextBillingDate: sub.next_billing_date,
-        sessionsPerMonth,
-        minutesPerSession,
-        sessionsUsed,
-        sessionsRemaining: Math.max(0, sessionsPerMonth - sessionsUsed),
-        canStartSession: isActive && canStartSession,
+        trialEnd: sub.trial_end,
+        isTrialing: sub.is_trialing ?? status === "trialing",
+        region: sub.region,
+        currency: sub.currency,
+        amount: sub.amount,
+        period: sub.period,
+        canStartSession: deriveCanStartSession(status, sub),
         loading: false,
       });
     } catch (err) {
       console.error("Subscription fetch failed:", err);
-      setSubscription((prev) => ({ ...prev, loading: false }));
+      // A failed refresh must not blank out a plan we already know about.
+      setCache({ ...cache, loading: false });
+      // Let the next caller retry rather than sitting behind the TTL.
+      lastFetchedAt = 0;
     } finally {
-      isFetchingRef.current = false;
-      isInitialCheckDoneRef.current = true;
+      inFlight = null;
     }
-  }, [getToken, isSignedIn]);
+  })();
+
+  return inFlight;
+}
+
+export function useSubscription() {
+  const { getToken, isSignedIn, userId } = useAuth();
+
+  // getToken has a new identity every render; capturing it in a ref keeps it out
+  // of dependency arrays, where it would re-trigger the effect on every render.
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
+  const [state, setState] = useState<SubscriptionState>(cache);
 
   useEffect(() => {
-    fetchSubscription();
-  }, [fetchSubscription]);
+    listeners.add(setState);
+    return () => {
+      listeners.delete(setState);
+    };
+  }, []);
 
-  return {
-    ...subscription,
-    refresh: () => fetchSubscription(true),
-  };
+  const refresh = useCallback(
+    () => loadSubscription(getTokenRef.current, Boolean(isSignedIn), true),
+    [isSignedIn],
+  );
+
+  useEffect(() => {
+    const uid = userId ?? null;
+    if (cachedUserId !== uid) {
+      resetFor(uid);
+      setState(cache);
+    }
+    void loadSubscription(getTokenRef.current, Boolean(isSignedIn), false);
+  }, [isSignedIn, userId]);
+
+  return { ...state, refresh };
 }

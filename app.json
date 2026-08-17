@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Lily",
-    "slug": "lily",
-    "version": "1.0.5",
+    "slug": "app",
+    "version": "2.0.8",
     "orientation": "portrait",
     "scheme": "aletheia",
     "newArchEnabled": true,
@@ -19,7 +19,8 @@
           "audio"
         ]
       },
-      "bundleIdentifier": "com.aletheia.app"
+      "bundleIdentifier": "com.aletheia.app",
+      "userInterfaceStyle": "dark"
     },
     "android": {
       "adaptiveIcon": {
@@ -37,7 +38,8 @@
         "BLUETOOTH",
         "BLUETOOTH_CONNECT",
         "WAKE_LOCK"
-      ]
+      ],
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",
@@ -45,39 +47,46 @@
       "favicon": "./assets/images/app-logo.png"
     },
     "plugins": [
-  "expo-router",
-  "@config-plugins/react-native-webrtc",
-  [
-    "expo-build-properties",
-    {
-      "android": {
-        "minSdkVersion": 24
-      },
-      "ios": {
-        "deploymentTarget": "15.1"
-      }
-    }
-  ],
-  [
-    "expo-splash-screen",
-    {
-      "image": "./assets/images/app-logo.png",
-      "imageWidth": 200,
-      "resizeMode": "contain",
-      "backgroundColor": "#f5f8f7",
-      "dark": {
-        "backgroundColor": "#000000"
-      }
-    }
-  ],
-  [
-    "expo-av",
-    {
-      "microphonePermission": "This app needs access to your microphone for therapy sessions."
-    }
-  ],
-  "expo-secure-store"
-],
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/app-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "This app needs access to your microphone for therapy sessions."
+        }
+      ],
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lily uses your photos so you can share an image in a conversation."
+        }
+      ],
+      "expo-speech-recognition"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
@@ -87,6 +96,8 @@
       "eas": {
         "projectId": "0f7439f7-93af-4a03-a7a1-113129e701f5"
       }
-    }
+    },
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000"
   }
 }

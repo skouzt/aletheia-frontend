@@ -1,39 +1,20 @@
-import { Stack } from "expo-router";
+import { LilyColors } from '@/constants/lily';
+import { Stack } from 'expo-router';
 
+/**
+ * One screen. Plan selection lives on the paywall (TrialOfferScreen), so the old
+ * plans / changeplan / manage trio collapsed into this.
+ */
 export default function SubscriptionLayout() {
   return (
     <Stack
       screenOptions={{
-        presentation: "modal",
-        animation: "slide_from_bottom",
+        headerShown: false,
+        presentation: 'modal',
+        animation: 'slide_from_bottom',
         gestureEnabled: true,
+        contentStyle: { backgroundColor: LilyColors.ground },
       }}
-    >
-      {/* Plan selection / upgrade */}
-      <Stack.Screen
-        name="index"
-        options={{ headerShown: false }}
-      />
-
-      {/* Manage active subscription */}
-      <Stack.Screen
-        name="manage"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="plans"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="changeplan"
-        options={{
-          headerShown: false,
-        }}
-      />
-    </Stack>
+    />
   );
 }

@@ -1,6 +1,6 @@
 import { API_URL } from "@/config/api";
 
-export type SubscriptionPlanType = "clarity" | "insight";
+export type SubscriptionPlanType = "monthly" | "yearly";
 
 export type SubscriptionActivationResult =
   | {
@@ -43,7 +43,7 @@ export const SUBSCRIPTION_RETRY_ATTEMPTS = 10;
 export const SUBSCRIPTION_RETRY_DELAY_MS = 1500;
 
 const normalizePlan = (plan?: string): SubscriptionPlanType =>
-  plan === "insight" ? "insight" : "clarity";
+  plan === "monthly" ? "monthly" : "yearly";
 
 const isActivatedResponse = (result: CheckAndActivateResponse) =>
   Boolean(

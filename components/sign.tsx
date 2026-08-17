@@ -1,11 +1,13 @@
-import { useAuth, useSignIn, useSignUp, useSSO } from '@clerk/clerk-expo';
-import * as AuthSession from "expo-auth-session";
+import { LilyGlow, LilyWelcomeArt } from '@/components/lily/LilyWelcomeArt';
+import { LilyColors, LilyFonts, LilyGradients } from '@/constants/lily';
+import { useAuth, useSSO, useSignIn, useSignUp } from '@clerk/clerk-expo';
+import * as AuthSession from 'expo-auth-session';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
 import React, { useEffect, useState } from 'react';
 import {
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,7 +15,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -21,15 +23,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-
-// Debug component
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const useWarmUpBrowser = () => {
   useEffect(() => {
-    WebBrowser.maybeCompleteAuthSession(); // ✅ Add this here
+    WebBrowser.maybeCompleteAuthSession();
 
     if (Platform.OS !== 'android') return;
     void WebBrowser.warmUpAsync();
@@ -39,30 +37,27 @@ export const useWarmUpBrowser = () => {
   }, []);
 };
 
-
-
 const redirectUrl = AuthSession.makeRedirectUri({
-  scheme: "aletheia",
-  path: "auth",
+  scheme: 'aletheia',
+  path: 'auth',
 });
-
-
-
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 const MiraWelcomeScreen = () => {
-
   useWarmUpBrowser();
-  
+
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       router.replace('/');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn]);
+
   // Modal states
   const [signInModalVisible, setSignInModalVisible] = useState(false);
   const [signUpModalVisible, setSignUpModalVisible] = useState(false);
@@ -111,18 +106,17 @@ const MiraWelcomeScreen = () => {
   });
 
   const onGooglePress = React.useCallback(async () => {
-    try {      
+    try {
       const { createdSessionId, signIn, signUp, setActive } = await startSSOFlow({
         strategy: 'oauth_google',
       });
-      // If we have a session, set it as active
+
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
         router.replace('/');
         return;
       }
 
-      // Handle transfer flow (if user needs to complete sign-in/sign-up)
       if (signUp?.verifications?.externalAccount?.status === 'transferable') {
         await signUp.create({ transfer: true });
         await setActive?.({ session: signUp.createdSessionId });
@@ -136,53 +130,45 @@ const MiraWelcomeScreen = () => {
         router.replace('/');
         return;
       }
-
-      
     } catch (err: any) {
       console.error('❌ Google OAuth failed:', err);
       console.error('Error details:', {
         message: err.message,
         errors: err.errors,
-        clerkError: err.clerkError
+        clerkError: err.clerkError,
       });
     }
   }, [startSSOFlow, router]);
 
-
-  
-// Email Sign In
-const onSignInPress = async () => {
-  
-  if (!signInLoaded) {
-    return;
-  }
-  
-  try {
-    const signInAttempt = await signIn.create({
-      identifier: emailAddress,
-      password,
-    });
-
-   
-
-    if (signInAttempt.status === 'complete') {
-      await setSignInActive({ session: signInAttempt.createdSessionId });
-      router.replace('/');
-    } else {
-      console.log('Sign in not complete - status:', signInAttempt.status);
+  // Email Sign In
+  const onSignInPress = async () => {
+    if (!signInLoaded) {
+      return;
     }
-  } catch (err) {
-    console.error('Sign in error:', err);
-  }
-};
+
+    try {
+      const signInAttempt = await signIn.create({
+        identifier: emailAddress,
+        password,
+      });
+
+      if (signInAttempt.status === 'complete') {
+        await setSignInActive({ session: signInAttempt.createdSessionId });
+        router.replace('/');
+      } else {
+        console.log('Sign in not complete - status:', signInAttempt.status);
+      }
+    } catch (err) {
+      console.error('Sign in error:', err);
+    }
+  };
 
   // Email/Password Sign Up
   const onSignUpPress = async () => {
-    
     if (!signUpLoaded) {
       return;
     }
-    
+
     try {
       await signUp.create({
         emailAddress: signUpEmail,
@@ -201,17 +187,16 @@ const onSignInPress = async () => {
 
   // Email Verification
   const onVerifyPress = async () => {
-    
     if (!signUpLoaded) {
       return;
     }
-    
+
     try {
       const signUpAttempt = await signUp.attemptEmailAddressVerification({ code });
 
       if (signUpAttempt.status === 'complete') {
         await setSignUpActive({ session: signUpAttempt.createdSessionId });
-        
+
         setSignUpModalVisible(false);
         setPendingVerification(false);
         router.replace('/');
@@ -226,54 +211,173 @@ const onSignInPress = async () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-      <View className="flex-1 p-4">
-        {/* Animated Welcome */}
-        <AnimatedView
-          style={animatedContentStyle}
-          className="flex-1 items-center justify-center max-w-xl w-full self-center opacity-0"
-        >
-          <View className="flex-1" />
-          <View className="w-full px-4 mb-8">
-            <Text className="text-4xl font-extrabold leading-10 text-[#0d1c17] text-center pb-2">
-              Your Non-Judgmental Listening Ear.
-            </Text>
-            <Text className="text-sm leading-5 text-[#499c7f] text-center">
-              Lily is always here — find immediate, confidential support without the wait or the worry of being judged.
-            </Text>
-          </View>
-          <Image
-              source={require('@/assets/images/Anxiety.gif')}
-              resizeMode="contain"
-              style={{
-                width: 320,
-                height: 320,
-                marginBottom: 28,
-              }}
-            />
-          <View className="flex-1" />
-        </AnimatedView>
-
-        {/* Buttons */}
-        <AnimatedView
-          style={animatedButtonStyle}
-          className="w-full max-w-xl self-center px-4 py-3 gap-3 opacity-0"
-        >
-          <TouchableOpacity
-            onPress={() => setSignUpModalVisible(true)}
-            className="h-12 bg-[#019863] rounded-xl items-center justify-center px-5"
-          >
-            <Text className="text-base font-bold tracking-widest text-white">SIGN UP</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setSignInModalVisible(true)}
-            className="h-12 bg-[#e0e7e5] rounded-xl items-center justify-center px-5"
-          >
-            <Text className="text-base font-bold tracking-widest text-[#0d1c17]">LOG IN</Text>
-          </TouchableOpacity>
-        </AnimatedView>
+    <View style={{ flex: 1, backgroundColor: LilyColors.ground, overflow: 'hidden' }}>
+      {/* Radial washes — RN has no radial CSS gradient, so these are SVG ellipses */}
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', top: -140, left: '50%', marginLeft: -260 }}
+      >
+        <LilyGlow width={520} height={420} color="#1F8C58" opacity={0.22} stopAt={0.68} />
       </View>
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', bottom: -60, left: '50%', marginLeft: -230 }}
+      >
+        <LilyGlow width={460} height={300} color="#146B45" opacity={0.2} stopAt={0.7} />
+      </View>
+
+      <AnimatedView
+        style={[
+          animatedContentStyle,
+          { paddingTop: Math.max(insets.top, 20) + 40, paddingHorizontal: 30, alignItems: 'center' },
+        ]}
+      >
+        <Text
+          style={{
+            fontFamily: LilyFonts.serif,
+            fontSize: 39,
+            lineHeight: 44,
+            letterSpacing: 0.2,
+            textAlign: 'center',
+            color: LilyColors.textPrimary,
+            marginTop: 20,
+          }}
+        >
+          Your non-judgmental listening ear.
+        </Text>
+        <Text
+          style={{
+            fontSize: 13.5,
+            lineHeight: 22,
+            textAlign: 'center',
+            fontFamily: LilyFonts.sans,
+            color: LilyColors.textMuted,
+            marginTop: 12,
+            paddingHorizontal: 6,
+          }}
+        >
+          Lily is always here — immediate, confidential support, without the wait or the worry of
+          being judged.
+        </Text>
+      </AnimatedView>
+
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: 6,
+          minHeight: 0,
+        }}
+      >
+        <LilyWelcomeArt />
+      </View>
+
+      <AnimatedView
+        style={[animatedButtonStyle, { paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 16) + 18 }]}
+      >
+        {/* Trust row */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 16,
+            paddingBottom: 20,
+          }}
+        >
+          <Text style={{ fontSize: 11.5, fontFamily: LilyFonts.sans, color: LilyColors.textFaint }}>
+            End-to-end private
+          </Text>
+          <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#2B3B33' }} />
+          <Text style={{ fontSize: 11.5, fontFamily: LilyFonts.sans, color: LilyColors.textFaint }}>
+            No waitlist
+          </Text>
+          <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#2B3B33' }} />
+          <Text style={{ fontSize: 11.5, fontFamily: LilyFonts.sans, color: LilyColors.textFaint }}>
+            Free to start
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setSignUpModalVisible(true)}
+          activeOpacity={0.9}
+          style={{
+            borderRadius: 100,
+            overflow: 'hidden',
+            shadowColor: '#0B4429',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.55,
+            shadowRadius: 28,
+          }}
+        >
+          <LinearGradient
+            colors={LilyGradients.signUp}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.9, y: 1 }}
+            style={{ paddingVertical: 18, paddingHorizontal: 20, alignItems: 'center' }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: LilyFonts.sansBold,
+                letterSpacing: 1.6,
+                color: '#DCF3E6',
+              }}
+            >
+              SIGN UP
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setSignInModalVisible(true)}
+          activeOpacity={0.9}
+          style={{
+            marginTop: 11,
+            backgroundColor: LilyColors.surfaceButton,
+            borderWidth: 1,
+            borderColor: LilyColors.hairlineBright,
+            borderRadius: 100,
+            paddingVertical: 18,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: LilyFonts.sansSemi,
+              letterSpacing: 1.6,
+              color: LilyColors.textStrong,
+            }}
+          >
+            LOG IN
+          </Text>
+        </TouchableOpacity>
+
+        <Text
+          style={{
+            textAlign: 'center',
+            fontSize: 11,
+            lineHeight: 17,
+            color: '#5E7268',
+            fontFamily: LilyFonts.sans,
+            marginTop: 14,
+            paddingHorizontal: 12,
+          }}
+        >
+          Lily is an AI companion, not a therapist or crisis service. By continuing you agree to our{' '}
+          <Text style={{ color: '#7FCBA4' }} onPress={() => router.push('/(privacy)')}>
+            Terms
+          </Text>{' '}
+          and{' '}
+          <Text style={{ color: '#7FCBA4' }} onPress={() => router.push('/(privacy)')}>
+            Privacy Policy
+          </Text>
+          .
+        </Text>
+      </AnimatedView>
 
       {/* Sign In Modal */}
       <Modal
@@ -281,199 +385,430 @@ const onSignInPress = async () => {
         transparent={true}
         visible={signInModalVisible}
         onRequestClose={() => setSignInModalVisible(false)}
+        statusBarTranslucent
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end"
-        >
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => setSignInModalVisible(false)}
-            className="bg-black/50 flex-1"
+            style={{ flex: 1, backgroundColor: LilyColors.scrim }}
           />
+
           <ScrollView
-                keyboardShouldPersistTaps="handled"
-                automaticallyAdjustKeyboardInsets
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingBottom: 24,
-                }}
-                className="bg-white rounded-t-3xl p-6 max-h-[90%]"
-              >
-            <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
-            <Text className="text-2xl font-bold text-[#0d1c17] mb-6">Sign In</Text>
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            style={{
+              backgroundColor: LilyColors.ground,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              borderTopWidth: 1,
+              borderTopColor: LilyColors.hairlineBright,
+              padding: 24,
+              maxHeight: '90%',
+            }}
+          >
+            <View
+              style={{
+                width: 44,
+                height: 4,
+                backgroundColor: 'rgba(255,255,255,0.18)',
+                borderRadius: 3,
+                alignSelf: 'center',
+                marginBottom: 20,
+              }}
+            />
+            <Text
+              style={{
+                fontSize: 24,
+                fontFamily: LilyFonts.serif,
+                color: LilyColors.textPrimary,
+                marginBottom: 22,
+              }}
+            >
+              Sign In
+            </Text>
 
             <TouchableOpacity
               onPress={onGooglePress}
-              className="h-12 bg-[#4285F4] rounded-xl items-center justify-center mb-4"
+              activeOpacity={0.85}
+              style={{
+                height: 50,
+                backgroundColor: '#FFFFFF',
+                borderRadius: 14,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
             >
-              <Text className="text-base font-bold text-white">Sign in with Google</Text>
+              <Text style={{ fontSize: 15, fontFamily: LilyFonts.sansSemi, color: '#1F1F1F' }}>
+                Sign in with Google
+              </Text>
             </TouchableOpacity>
 
-            <View className="flex-row items-center my-2">
-              <View className="flex-1 h-px bg-gray-300" />
-              <Text className="mx-4 text-gray-500">OR</Text>
-              <View className="flex-1 h-px bg-gray-300" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: LilyColors.hairline }} />
+              <Text
+                style={{
+                  marginHorizontal: 16,
+                  fontFamily: LilyFonts.sans,
+                  fontSize: 12,
+                  color: LilyColors.textFaint,
+                }}
+              >
+                OR
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: LilyColors.hairline }} />
             </View>
 
             <TextInput
               autoCapitalize="none"
+              keyboardType="email-address"
               value={emailAddress}
               placeholder="Enter email"
+              placeholderTextColor={LilyColors.textFaint}
               onChangeText={setEmailAddress}
-              className="h-12 bg-[#f5f5f5] rounded-xl px-4 mb-4 mt-2"
+              style={{
+                height: 50,
+                backgroundColor: LilyColors.surface,
+                borderWidth: 1,
+                borderColor: LilyColors.hairline,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                marginTop: 8,
+                marginBottom: 16,
+                color: LilyColors.textPrimary,
+                fontFamily: LilyFonts.sans,
+                fontSize: 15,
+              }}
             />
             <TextInput
               value={password}
               placeholder="Enter password"
-              secureTextEntry={true}
+              placeholderTextColor={LilyColors.textFaint}
+              secureTextEntry
               onChangeText={setPassword}
-              className="h-12 bg-[#f5f5f5] rounded-xl px-4 mb-6"
+              style={{
+                height: 50,
+                backgroundColor: LilyColors.surface,
+                borderWidth: 1,
+                borderColor: LilyColors.hairline,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                marginBottom: 24,
+                color: LilyColors.textPrimary,
+                fontFamily: LilyFonts.sans,
+                fontSize: 15,
+              }}
             />
 
             <TouchableOpacity
               onPress={onSignInPress}
-              className="h-12 bg-[#019863] rounded-xl items-center justify-center mb-4"
+              activeOpacity={0.85}
+              style={{
+                height: 50,
+                backgroundColor: LilyColors.accent,
+                borderRadius: 14,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
             >
-              <Text className="text-base font-bold text-white">Continue</Text>
+              <Text
+                style={{ fontSize: 15, fontFamily: LilyFonts.sansSemi, color: LilyColors.ground }}
+              >
+                Continue
+              </Text>
             </TouchableOpacity>
 
-            <View className="flex-row justify-center items-center gap-1">
-              <Text className="text-gray-600">Don't have an account?</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <Text
+                style={{ fontFamily: LilyFonts.sans, fontSize: 14, color: LilyColors.textMuted }}
+              >
+                Don&apos;t have an account?
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   setSignInModalVisible(false);
                   setSignUpModalVisible(true);
                 }}
               >
-                <Text className="text-[#019863] font-semibold">Sign up</Text>
+                <Text
+                  style={{ fontFamily: LilyFonts.sansSemi, fontSize: 14, color: LilyColors.accent }}
+                >
+                  Sign up
+                </Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
-
         </KeyboardAvoidingView>
       </Modal>
 
       {/* Sign Up Modal */}
-      
-       <Modal
-  animationType="slide"
-  transparent
-  visible={signUpModalVisible}
-  onRequestClose={() => setSignUpModalVisible(false)}
->
-  
-    {/* Overlay */}
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={() => {
-        setSignUpModalVisible(false);
-        setPendingVerification(false);
-      }}
-      style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
-    />
-
-    {/* Bottom Sheet */}
-    <View
-      style={{
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        height: '85%',          // 🔑 FIXED HEIGHT (not maxHeight)
-      }}
-    >
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 24,
-          paddingBottom: 40,
-        }}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={signUpModalVisible}
+        onRequestClose={() => setSignUpModalVisible(false)}
+        statusBarTranslucent
       >
-        <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            setSignUpModalVisible(false);
+            setPendingVerification(false);
+          }}
+          style={{ flex: 1, backgroundColor: LilyColors.scrim }}
+        />
 
-        {pendingVerification ? (
-          <>
-            <Text className="text-2xl font-bold text-[#0d1c17] mb-2">
-              Verify your email
-            </Text>
-            <Text className="text-gray-600 mb-6">
-              Enter the verification code sent to your email
-            </Text>
-
-            <TextInput
-              value={code}
-              placeholder="Enter verification code"
-              onChangeText={setCode}
-              keyboardType="number-pad"
-              className="h-12 bg-[#f5f5f5] rounded-xl px-4 mb-6 text-center text-lg tracking-widest"
+        <View
+          style={{
+            backgroundColor: LilyColors.ground,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            borderTopWidth: 1,
+            borderTopColor: LilyColors.hairlineBright,
+            height: '85%',
+          }}
+        >
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
+          >
+            <View
+              style={{
+                width: 44,
+                height: 4,
+                backgroundColor: 'rgba(255,255,255,0.18)',
+                borderRadius: 3,
+                alignSelf: 'center',
+                marginBottom: 20,
+              }}
             />
 
-            <TouchableOpacity
-              onPress={onVerifyPress}
-              className="h-12 bg-[#019863] rounded-xl items-center justify-center"
-            >
-              <Text className="text-base font-bold text-white">Verify</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text className="text-2xl font-bold text-[#0d1c17] mb-6">
-              Sign Up
-            </Text>
+            {pendingVerification ? (
+              <>
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontFamily: LilyFonts.serif,
+                    color: LilyColors.textPrimary,
+                    marginBottom: 8,
+                  }}
+                >
+                  Verify your email
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: LilyFonts.sans,
+                    fontSize: 14,
+                    lineHeight: 22,
+                    color: LilyColors.textMuted,
+                    marginBottom: 24,
+                  }}
+                >
+                  Enter the verification code sent to your email
+                </Text>
+
+                <TextInput
+                  value={code}
+                  placeholder="Enter verification code"
+                  placeholderTextColor={LilyColors.textFaint}
+                  onChangeText={setCode}
+                  keyboardType="number-pad"
+                  style={{
+                    height: 50,
+                    backgroundColor: LilyColors.surface,
+                    borderWidth: 1,
+                    borderColor: LilyColors.hairline,
+                    borderRadius: 14,
+                    paddingHorizontal: 16,
+                    marginBottom: 24,
+                    textAlign: 'center',
+                    fontSize: 18,
+                    letterSpacing: 4,
+                    color: LilyColors.textPrimary,
+                    fontFamily: LilyFonts.sans,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={onVerifyPress}
+                  activeOpacity={0.85}
+                  style={{
+                    height: 50,
+                    backgroundColor: LilyColors.accent,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontFamily: LilyFonts.sansSemi,
+                      color: LilyColors.ground,
+                    }}
+                  >
+                    Verify
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontFamily: LilyFonts.serif,
+                    color: LilyColors.textPrimary,
+                    marginBottom: 22,
+                  }}
+                >
+                  Sign Up
+                </Text>
 
                 <TouchableOpacity
                   onPress={onGooglePress}
-                  className="h-12 bg-[#4285F4] rounded-xl items-center justify-center mb-4"
+                  activeOpacity={0.85}
+                  style={{
+                    height: 50,
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                  }}
                 >
-                  <Text className="text-base font-bold text-white">Sign up with Google</Text>
+                  <Text style={{ fontSize: 15, fontFamily: LilyFonts.sansSemi, color: '#1F1F1F' }}>
+                    Sign up with Google
+                  </Text>
                 </TouchableOpacity>
 
-                <View className="flex-row items-center my-2">
-                  <View className="flex-1 h-px bg-gray-300" />
-                  <Text className="mx-4 text-gray-500">OR</Text>
-                  <View className="flex-1 h-px bg-gray-300" />
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: LilyColors.hairline }} />
+                  <Text
+                    style={{
+                      marginHorizontal: 16,
+                      fontFamily: LilyFonts.sans,
+                      fontSize: 12,
+                      color: LilyColors.textFaint,
+                    }}
+                  >
+                    OR
+                  </Text>
+                  <View style={{ flex: 1, height: 1, backgroundColor: LilyColors.hairline }} />
                 </View>
 
                 <TextInput
                   autoCapitalize="none"
+                  keyboardType="email-address"
                   value={signUpEmail}
                   placeholder="Enter email"
+                  placeholderTextColor={LilyColors.textFaint}
                   onChangeText={setSignUpEmail}
-                  className="h-12 bg-[#f5f5f5] rounded-xl px-4 mb-4 mt-2"
+                  style={{
+                    height: 50,
+                    backgroundColor: LilyColors.surface,
+                    borderWidth: 1,
+                    borderColor: LilyColors.hairline,
+                    borderRadius: 14,
+                    paddingHorizontal: 16,
+                    marginTop: 8,
+                    marginBottom: 16,
+                    color: LilyColors.textPrimary,
+                    fontFamily: LilyFonts.sans,
+                    fontSize: 15,
+                  }}
                 />
                 <TextInput
                   value={signUpPassword}
                   placeholder="Enter password"
-                  secureTextEntry={true}
+                  placeholderTextColor={LilyColors.textFaint}
+                  secureTextEntry
                   onChangeText={setSignUpPassword}
-                  className="h-12 bg-[#f5f5f5] rounded-xl px-4 mb-6"
+                  style={{
+                    height: 50,
+                    backgroundColor: LilyColors.surface,
+                    borderWidth: 1,
+                    borderColor: LilyColors.hairline,
+                    borderRadius: 14,
+                    paddingHorizontal: 16,
+                    marginBottom: 24,
+                    color: LilyColors.textPrimary,
+                    fontFamily: LilyFonts.sans,
+                    fontSize: 15,
+                  }}
                 />
 
                 <TouchableOpacity
                   onPress={onSignUpPress}
-                  className="h-12 bg-[#019863] rounded-xl items-center justify-center mb-4"
+                  activeOpacity={0.85}
+                  style={{
+                    height: 50,
+                    backgroundColor: LilyColors.accent,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                  }}
                 >
-                  <Text className="text-base font-bold text-white">Continue</Text>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontFamily: LilyFonts.sansSemi,
+                      color: LilyColors.ground,
+                    }}
+                  >
+                    Continue
+                  </Text>
                 </TouchableOpacity>
 
-                <View className="flex-row justify-center items-center gap-1">
-                  <Text className="text-gray-600">Already have an account?</Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Text
+                    style={{ fontFamily: LilyFonts.sans, fontSize: 14, color: LilyColors.textMuted }}
+                  >
+                    Already have an account?
+                  </Text>
                   <TouchableOpacity
                     onPress={() => {
                       setSignUpModalVisible(false);
                       setSignInModalVisible(true);
                     }}
                   >
-                    <Text className="text-[#019863] font-semibold">Sign in</Text>
+                    <Text
+                      style={{
+                        fontFamily: LilyFonts.sansSemi,
+                        fontSize: 14,
+                        color: LilyColors.accent,
+                      }}
+                    >
+                      Sign in
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </>
             )}
-      </ScrollView>
-      </View>
+          </ScrollView>
+        </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

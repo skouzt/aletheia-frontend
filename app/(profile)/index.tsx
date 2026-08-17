@@ -1,27 +1,26 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import { CloseX } from '@/components/lily/ui';
+import { LilyColors, LilyFonts } from '@/constants/lily';
+import { useAuth } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from "react-native";
-import Animated, {
-  SlideInDown,
-  SlideOutDown,
-} from "react-native-reanimated";
+  View,
+} from 'react-native';
+import Animated, { Easing, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const AGE_GROUPS = ["Under 18", "18–24", "25–34", "35–44", "45+"];
-const GENDERS = ["Woman", "Man", "Non-binary", "Prefer not to say"];
+const AGE_GROUPS = ['Under 18', '18–24', '25–34', '35–44', '45+'];
+const GENDERS = ['Woman', 'Man', 'Non-binary', 'Prefer not to say'];
 
-const CACHE_KEY = "@aletheia_profile_";
+const CACHE_KEY = '@aletheia_profile_';
 const CACHE_TTL_MS = Number.MAX_SAFE_INTEGER;
 
 interface ProfileData {
@@ -31,18 +30,94 @@ interface ProfileData {
   timestamp: number;
 }
 
+/** Section label above each group of controls. */
+function FieldLabel({ children, style }: { children: React.ReactNode; style?: object }) {
+  return (
+    <Text
+      style={[
+        {
+          fontSize: 12,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+          fontFamily: LilyFonts.sansSemi,
+          color: LilyColors.textMuted,
+          marginBottom: 10,
+        },
+        style as never,
+      ]}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export default function Profile() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { userId, getToken } = useAuth();
 
   const hasLoaded = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null); // ✅ track controller
+  const abortControllerRef = useRef<AbortController | null>(null);
 
+  const [isVisible, setIsVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [name, setName] = useState("");
-  const [selectedAge, setSelectedAge] = useState("25–34");
-  const [selectedGender, setSelectedGender] = useState("Woman");
+  const [name, setName] = useState('');
+  const [selectedAge, setSelectedAge] = useState('25–34');
+  const [selectedGender, setSelectedGender] = useState('Woman');
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(() => router.back(), 300);
+  };
+
+  const fetchProfileFromBackend = useCallback(
+    async (uid: string, showLoading: boolean) => {
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      if (showLoading) setLoading(true);
+
+      try {
+        const token = await getToken({ template: 'backend-api' });
+
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        const profileData: ProfileData = {
+          name: data.name || '',
+          age: data.age || '25–34',
+          gender: data.gender || 'Woman',
+          timestamp: Date.now(),
+        };
+
+        setName(profileData.name);
+        setSelectedAge(profileData.age);
+        setSelectedGender(profileData.gender);
+
+        await AsyncStorage.setItem(`${CACHE_KEY}${uid}`, JSON.stringify(profileData));
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+
+        console.error('Failed to fetch profile:', error);
+        if (showLoading) Alert.alert('Error', 'Failed to load profile');
+      } finally {
+        if (!controller.signal.aborted && showLoading) setLoading(false);
+      }
+    },
+    [getToken],
+  );
 
   useEffect(() => {
     if (!userId) return;
@@ -60,16 +135,16 @@ export default function Profile() {
           const isExpired = Date.now() - parsed.timestamp > CACHE_TTL_MS;
 
           if (!isExpired) {
-            setName(parsed.name || "");
-            setSelectedAge(parsed.age || "25–34");
-            setSelectedGender(parsed.gender || "Woman");
+            setName(parsed.name || '');
+            setSelectedAge(parsed.age || '25–34');
+            setSelectedGender(parsed.gender || 'Woman');
             setLoading(false);
             return;
           }
         }
 
         await fetchProfileFromBackend(userId, true);
-      } catch (error) {
+      } catch {
         await fetchProfileFromBackend(userId, true);
       }
     };
@@ -77,63 +152,9 @@ export default function Profile() {
     loadProfile();
 
     return () => {
-      // ✅ abort any in-flight request on unmount
       abortControllerRef.current?.abort();
     };
-  }, [userId]);
-
-  const fetchProfileFromBackend = async (uid: string, showLoading: boolean) => {
-    // ✅ abort previous request if still running
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    if (showLoading) setLoading(true);
-
-    try {
-      const token = await getToken({ template: "backend-api" });
-
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/profile`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-          signal: controller.signal, // ✅ attach signal
-        }
-      );
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
-
-      const profileData: ProfileData = {
-        name: data.name || "",
-        age: data.age || "25–34",
-        gender: data.gender || "Woman",
-        timestamp: Date.now(),
-      };
-
-      setName(profileData.name);
-      setSelectedAge(profileData.age);
-      setSelectedGender(profileData.gender);
-
-      await AsyncStorage.setItem(`${CACHE_KEY}${uid}`, JSON.stringify(profileData));
-
-    } catch (error) {
-      if ((error as Error).name === "AbortError") return; // ✅ silently ignore aborts
-
-      console.error("Failed to fetch profile:", error);
-      if (showLoading) Alert.alert("Error", "Failed to load profile");
-    } finally {
-      // ✅ only update loading if this request wasn't aborted
-      if (!controller.signal.aborted) {
-        if (showLoading) setLoading(false);
-      }
-    }
-  };
+  }, [userId, fetchProfileFromBackend]);
 
   const saveToCache = async () => {
     if (!userId) return;
@@ -148,13 +169,13 @@ export default function Profile() {
     try {
       await AsyncStorage.setItem(`${CACHE_KEY}${userId}`, JSON.stringify(profileData));
     } catch (error) {
-      console.error("Cache save error:", error);
+      console.error('Cache save error:', error);
     }
   };
 
   async function handleSave() {
     if (!name.trim()) {
-      Alert.alert("Error", "Please enter your name");
+      Alert.alert('Add your name', 'Lily uses it to talk to you.');
       return;
     }
 
@@ -162,188 +183,229 @@ export default function Profile() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const token = await getToken({ template: "backend-api" });
+      const token = await getToken({ template: 'backend-api' });
 
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/profile`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: name.trim(),
-            age: selectedAge,
-            gender: selectedGender,
-          }),
-        }
-      );
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/users/profile`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          age: selectedAge,
+          gender: selectedGender,
+        }),
+      });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       await saveToCache();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
-    } catch (error) {
-      Alert.alert("Error", "Something went wrong.");
+      handleClose();
+    } catch {
+      Alert.alert('Error', 'Something went wrong.');
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <View className="flex-1 justify-end bg-black/40">
-      <Animated.View
-        entering={SlideInDown.duration(400)}
-        exiting={SlideOutDown.duration(250)}
-        className="rounded-t-[32px] overflow-hidden"
-        style={{ height: "92%", backgroundColor: "#F6F8F7" }}
-      >
-        <View className="flex-1">
-          <LinearGradient
-            colors={["#EAF6F1", "#F6F8F7"]}
-            locations={[0, 1]}
-          >
-            <View className="items-center pt-3 pb-1">
-              <View className="h-1.5 w-12 rounded-full bg-gray-300" />
-            </View>
-
+    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: LilyColors.scrim }}>
+      {isVisible && (
+        <Animated.View
+          entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
+          exiting={SlideOutDown.duration(300).easing(Easing.in(Easing.ease))}
+          style={{
+            height: '92%',
+            overflow: 'hidden',
+            backgroundColor: LilyColors.ground,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            borderTopWidth: 1,
+            borderTopColor: LilyColors.hairlineBright,
+          }}
+        >
+          {/* Grabber */}
+          <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 4 }}>
             <View
-              style={{
-                height: 56,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="w-10 h-10 rounded-full bg-white/60"
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  width: 36,
-                  height: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="close" size={22} color="#111815" />
-              </TouchableOpacity>
+              style={{ height: 4, width: 38, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.16)' }}
+            />
+          </View>
 
-              <Text
-                style={{
-                  fontFamily: "LibreCaslonText-Bold",
-                  fontSize: 18,
-                  color: "#111815",
-                }}
-              >
-                Your Profile
-              </Text>
-
-              <View style={{ width: 36 }} />
-            </View>
-          </LinearGradient>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 16,
+          {/* Header */}
+          <View
+            style={{
+              paddingHorizontal: 22,
               paddingTop: 8,
-              paddingBottom: 120,
+              paddingBottom: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
             }}
           >
-            <View className="bg-white rounded-2xl p-4 shadow-sm">
-              <Text className="font-semibold mb-1">Name</Text>
+            <Text
+              style={{
+                flex: 1,
+                fontFamily: LilyFonts.serif,
+                fontSize: 30,
+                color: LilyColors.textPrimary,
+              }}
+            >
+              Your Profile
+            </Text>
+
+            <TouchableOpacity
+              onPress={handleClose}
+              hitSlop={10}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: LilyColors.ghostFill,
+              }}
+            >
+              <CloseX />
+            </TouchableOpacity>
+          </View>
+
+          {loading ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator color={LilyColors.accent} />
+            </View>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 40 }}
+            >
+              <FieldLabel>Name</FieldLabel>
               <TextInput
                 value={name}
                 onChangeText={setName}
-                placeholder="Enter your name"
-                className="h-12 rounded-xl bg-gray-100 px-4 mb-5"
+                placeholder="What should Lily call you?"
+                placeholderTextColor={LilyColors.textFaint}
+                style={{
+                  height: 52,
+                  borderRadius: 16,
+                  paddingHorizontal: 16,
+                  fontSize: 15,
+                  fontFamily: LilyFonts.sans,
+                  color: LilyColors.textPrimary,
+                  backgroundColor: LilyColors.surface,
+                  borderWidth: 1,
+                  borderColor: LilyColors.hairline,
+                }}
               />
 
-              <Text className="font-semibold mb-2">Age</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {AGE_GROUPS.map((age) => (
-                  <TouchableOpacity
-                    key={age}
-                    onPress={() => setSelectedAge(age)}
-                    className={`px-4 py-2 rounded-full mr-2 ${
-                      selectedAge === age
-                        ? "bg-[#019863]"
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    <Text
-                      className={`text-sm font-semibold ${
-                        selectedAge === age
-                          ? "text-white"
-                          : "text-gray-600"
-                      }`}
+              <FieldLabel style={{ marginTop: 28 }}>Age</FieldLabel>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8 }}
+              >
+                {AGE_GROUPS.map((age) => {
+                  const on = selectedAge === age;
+                  return (
+                    <TouchableOpacity
+                      key={age}
+                      onPress={() => setSelectedAge(age)}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 10,
+                        borderRadius: 100,
+                        backgroundColor: on ? LilyColors.accentWash : LilyColors.surface,
+                        borderWidth: 1,
+                        borderColor: on ? LilyColors.accent : LilyColors.hairline,
+                      }}
                     >
-                      {age}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={{
+                          fontSize: 13.5,
+                          fontFamily: on ? LilyFonts.sansSemi : LilyFonts.sans,
+                          color: on ? LilyColors.textPrimary : LilyColors.textBody,
+                        }}
+                      >
+                        {age}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
 
-              <Text className="font-semibold mt-5 mb-2">Gender</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {GENDERS.map((gender) => (
-                  <TouchableOpacity
-                    key={gender}
-                    onPress={() => setSelectedGender(gender)}
-                    className={`w-[48%] h-12 rounded-xl border items-center justify-center ${
-                      selectedGender === gender
-                        ? "border-[#019863]"
-                        : "border-gray-200"
-                    }`}
-                  >
-                    <Text
-                      className={`font-semibold ${
-                        selectedGender === gender
-                          ? "text-[#019863]"
-                          : "text-gray-500"
-                      }`}
+              <FieldLabel style={{ marginTop: 28 }}>Gender</FieldLabel>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                {GENDERS.map((gender) => {
+                  const on = selectedGender === gender;
+                  return (
+                    <TouchableOpacity
+                      key={gender}
+                      onPress={() => setSelectedGender(gender)}
+                      style={{
+                        width: '47.5%',
+                        flexGrow: 1,
+                        height: 52,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: on ? LilyColors.accentWash : LilyColors.surface,
+                        borderWidth: 1,
+                        borderColor: on ? LilyColors.accent : LilyColors.hairline,
+                      }}
                     >
-                      {gender}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontFamily: on ? LilyFonts.sansSemi : LilyFonts.sans,
+                          color: on ? LilyColors.textPrimary : LilyColors.textBody,
+                        }}
+                      >
+                        {gender}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          )}
 
+          {/* Footer */}
           <View
             style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              paddingHorizontal: 16,
-              paddingTop: 12,
-              paddingBottom: 20,
-              backgroundColor: "#F6F8F7",
+              paddingHorizontal: 22,
+              paddingTop: 14,
+              paddingBottom: Math.max(insets.bottom, 16) + 8,
+              backgroundColor: LilyColors.ground,
               borderTopWidth: 1,
-              borderTopColor: "#E2E8E5",
+              borderTopColor: LilyColors.hairline,
             }}
           >
             <TouchableOpacity
               onPress={handleSave}
-              disabled={saving}
-              className="h-12 rounded-full bg-[#019863] items-center justify-center"
+              disabled={saving || loading}
+              style={{
+                height: 54,
+                borderRadius: 100,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: saving || loading ? 'rgba(63,191,127,0.3)' : LilyColors.accent,
+              }}
             >
-              <Text className="text-white font-bold">
-                {saving ? "Saving..." : "Save Changes"}
-              </Text>
+              {saving ? (
+                <ActivityIndicator color={LilyColors.ground} />
+              ) : (
+                <Text
+                  style={{ fontSize: 16, fontFamily: LilyFonts.sansSemi, color: LilyColors.ground }}
+                >
+                  Save Changes
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      )}
     </View>
   );
 }
-
-
-             

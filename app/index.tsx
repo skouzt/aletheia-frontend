@@ -1,10 +1,10 @@
+import { LilyColors, LilyFonts } from "@/constants/lily";
 import { useCheckOnboarding } from "@/hooks/useCheckOnboarding";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@clerk/clerk-expo";
-import { LinearGradient } from "expo-linear-gradient";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, Linking, Text, View } from "react-native";
+import { Linking, Text, View } from "react-native";
 
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -36,29 +36,33 @@ export default function Index() {
     hasCompletedOnboarding === null
   ) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-        <LinearGradient
-          colors={["#FFD36A", "#FFB347", "#F5F8F7"]}
-          locations={[0, 0.55, 1]}
-          style={{ flex: 1 }}
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: LilyColors.ground,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: LilyFonts.serif,
+            fontSize: 40,
+            color: LilyColors.textPrimary,
+          }}
         >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={require("@/assets/images/loading.gif")}
-              style={{ width: 180, height: 180, marginBottom: 20 }}
-              resizeMode="contain"
-            />
-            <Text style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>
-              Getting things ready for you…
-            </Text>
-          </View>
-        </LinearGradient>
+          Lily
+        </Text>
+        <Text
+          style={{
+            fontSize: 13,
+            fontFamily: LilyFonts.sans,
+            color: LilyColors.textFaint,
+            marginTop: 10,
+          }}
+        >
+          Getting things ready for you…
+        </Text>
       </View>
     );
   }
@@ -75,5 +79,6 @@ export default function Index() {
     return <Redirect href="/(onboarding_form)/personal" />;
   }
 
-  return <Redirect href="/(tabs)/home" />;
+  // Chat is the landing surface — there is no separate home screen in the design.
+  return <Redirect href="/(chat)" />;
 }

@@ -1,22 +1,66 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
-import Animated, {
-  Easing,
-  SlideInDown,
-  SlideOutDown,
-} from "react-native-reanimated";
+import { CloseX } from '@/components/lily/ui';
+import { LilyColors, LilyFonts } from '@/constants/lily';
+import { useAuth } from '@clerk/clerk-expo';
+import * as Haptics from 'expo-haptics';
+import { markSummariesStale } from '@/state/summariesFreshness';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Modal, TouchableOpacity, ScrollView, Text, View } from 'react-native';
+import Animated, { Easing, FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
+
+function ShieldIcon() {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 3l7 3v5.2c0 4.3-2.9 8.1-7 9.3-4.1-1.2-7-5-7-9.3V6l7-3z"
+        stroke={LilyColors.accent}
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M8.8 12.1l2.2 2.2 4.2-4.4"
+        stroke={LilyColors.accent}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"
+        stroke={LilyColors.accentBright}
+        strokeWidth={1.6}
+      />
+      <Path
+        d="M12 7.4V12l3 1.8"
+        stroke={LilyColors.accentBright}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" stroke={LilyColors.textFaint} strokeWidth={1.6} />
+      <Path
+        d="M12 11v5M12 7.8v.4"
+        stroke={LilyColors.textFaint}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
 
 export default function ManageDataScreen() {
   const router = useRouter();
@@ -39,17 +83,17 @@ export default function ManageDataScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const token = await getToken({ template: "backend-api" });
-      
+      const token = await getToken({ template: 'backend-api' });
+
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/v1/therapy/sessions/clear`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -58,136 +102,261 @@ export default function ManageDataScreen() {
       }
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Summaries holds a cache of exactly what was just deleted.
+      markSummariesStale(userId);
 
-      Alert.alert(
-        "Session History Cleared",
-        "Your past session summaries have been removed."
-      );
+      Alert.alert('Session History Cleared', 'Your past session summaries have been removed.');
 
       handleClose();
     } catch (error) {
-      console.error("Failed to clear history:", error);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      console.error('Failed to clear history:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View className="flex-1 justify-end bg-black/40">
+    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: LilyColors.scrim }}>
       {visible && (
         <Animated.View
           entering={SlideInDown.duration(400).easing(Easing.out(Easing.ease))}
           exiting={SlideOutDown.duration(300).easing(Easing.in(Easing.ease))}
-          className="rounded-t-[32px] overflow-hidden bg-[#F6F8F7]"
-          style={{ height: "90%" }}
+          style={{
+            height: '90%',
+            overflow: 'hidden',
+            backgroundColor: LilyColors.ground,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            borderTopWidth: 1,
+            borderTopColor: LilyColors.hairlineBright,
+          }}
         >
-          {/* ---------- HEADER ---------- */}
-          <View className="relative pb-6 pt-2">
-            <LinearGradient colors={["#EAF6F1", "#F6F8F7"]} className="absolute top-0 left-0 right-0 h-full" />
-
-            <View className="items-center pt-3 pb-4">
-              <View className="h-1.5 w-12 rounded-full bg-gray-300/80" />
-            </View>
-
-            {/* Close */}
-            <Pressable
-              onPress={handleClose} // ✅ Use handleClose instead of direct setVisible(false)
-              className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/70 items-center justify-center"
-            >
-              <Ionicons name="close" size={22} color="#374151" />
-            </Pressable>
-
-            {/* Title */}
-            <View className="items-center px-6 mt-2">
-              <View className="w-14 h-14 rounded-full bg-white items-center justify-center shadow-sm mb-4">
-                <Ionicons name="shield-checkmark-outline" size={30} color="#019863" />
-              </View>
-
-              <Text className="text-3xl text-gray-900 mb-2 font-bold">
-                Manage Your Data
-              </Text>
-
-              <Text className="text-base text-gray-600 text-center max-w-xs">
-                You're in control of your session history.
-              </Text>
-            </View>
+          {/* Grabber */}
+          <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 4 }}>
+            <View
+              style={{ height: 4, width: 38, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.16)' }}
+            />
           </View>
 
-          {/* ---------- CONTENT ---------- */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
-            className="px-6 pt-2"
-          >
-            {/* Action Card */}
-            <View className="bg-[#FFFBF5] border border-[#F5E6CA] rounded-2xl p-6 shadow-sm mb-6">
-              <View className="gap-4">
-                <View>
-                  <Text className="text-lg font-bold flex-row items-center gap-2 text-gray-900">
-                    <Ionicons name="time-outline" size={18} color="#D97706" />{" "}
-                    Clear Session History
-                  </Text>
-
-                  <Text className="text-[15px] text-gray-600 leading-relaxed mt-2">
-                    This will remove your past session summaries from the app.
-                    Your account will remain active.
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={() => setConfirmVisible(true)}
-                  disabled={loading}
-                  className="h-12 rounded-xl bg-white border border-gray-200 items-center justify-center active:scale-[0.98]"
+          {/* Header */}
+          <View style={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 18 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: LilyColors.accentWashSoft,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 14,
+                  }}
                 >
-                  <Text className="font-bold text-gray-800">
-                    {loading ? "Clearing..." : "Clear History"}
-                  </Text>
-                </Pressable>
+                  <ShieldIcon />
+                </View>
+                <Text
+                  style={{ fontFamily: LilyFonts.serif, fontSize: 30, color: LilyColors.textPrimary }}
+                >
+                  Manage Your Data
+                </Text>
               </View>
+
+              <TouchableOpacity
+                onPress={handleClose}
+                hitSlop={10}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 17,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: LilyColors.ghostFill,
+                }}
+              >
+                <CloseX />
+              </TouchableOpacity>
             </View>
 
-            {/* Reassurance */}
-            <View className="flex-row gap-3 px-2">
-              <Ionicons name="information-circle-outline" size={18} color="#019863" style={{ marginTop: 2 }} />
-              <Text className="text-sm text-gray-500 leading-relaxed">
-                You'll be asked to confirm before this action is completed.
-                No data is removed immediately.
+            <Text
+              style={{
+                marginTop: 10,
+                maxWidth: 300,
+                fontSize: 13,
+                lineHeight: 21,
+                fontFamily: LilyFonts.sans,
+                color: LilyColors.textMuted,
+              }}
+            >
+              You&apos;re in control of your session history.
+            </Text>
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
+          >
+            <View
+              style={{
+                backgroundColor: LilyColors.surfaceCard,
+                borderWidth: 1,
+                borderColor: LilyColors.accentBorder,
+                borderRadius: 22,
+                padding: 18,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <ClockIcon />
+                <Text
+                  style={{ fontFamily: LilyFonts.sansSemi, fontSize: 16, color: LilyColors.textPrimary }}
+                >
+                  Clear Session History
+                </Text>
+              </View>
+
+              <Text
+                style={{
+                  fontSize: 14,
+                  lineHeight: 23,
+                  fontFamily: LilyFonts.sans,
+                  color: LilyColors.textBody,
+                  marginTop: 8,
+                }}
+              >
+                This will remove your past session summaries from the app. Your account will remain
+                active.
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => setConfirmVisible(true)}
+                disabled={loading}
+                style={{
+                  height: 48,
+                  borderRadius: 100,
+                  marginTop: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: LilyColors.surfaceButton,
+                  borderWidth: 1,
+                  borderColor: LilyColors.hairlineBright,
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                {loading ? (
+                  <ActivityIndicator color={LilyColors.textBody} />
+                ) : (
+                  <Text
+                    style={{ fontFamily: LilyFonts.sansSemi, fontSize: 15, color: LilyColors.textPrimary }}
+                  >
+                    Clear History
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 18, paddingHorizontal: 2 }}>
+              <View style={{ paddingTop: 2 }}>
+                <InfoIcon />
+              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 12.5,
+                  lineHeight: 20,
+                  fontFamily: LilyFonts.sans,
+                  color: LilyColors.textFaint,
+                }}
+              >
+                You&apos;ll be asked to confirm before this action is completed. No data is removed
+                immediately.
               </Text>
             </View>
           </ScrollView>
         </Animated.View>
       )}
 
-      {/* ---------- CONFIRMATION DIALOG ---------- */}
-      <Modal transparent visible={confirmVisible} animationType="fade">
-        <View className="flex-1 bg-black/40 items-center justify-center px-6">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <Text className="text-lg font-bold mb-2 text-gray-900">
-              Clear Session History?
+      {/* Confirmation */}
+      <Modal transparent visible={confirmVisible} animationType="fade" statusBarTranslucent>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: LilyColors.scrim,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 26,
+          }}
+        >
+          <Animated.View
+            entering={FadeIn.duration(180)}
+            style={{
+              width: '100%',
+              maxWidth: 340,
+              backgroundColor: LilyColors.surfaceCard,
+              borderWidth: 1,
+              borderColor: LilyColors.hairlineBright,
+              borderRadius: 24,
+              padding: 22,
+            }}
+          >
+            <Text
+              style={{ fontFamily: LilyFonts.serif, fontSize: 21, color: LilyColors.textPrimary }}
+            >
+              Clear session history?
             </Text>
 
-            <Text className="text-sm text-gray-600 leading-relaxed mb-6">
-              This will permanently remove your past session summaries.
-              This action cannot be undone.
+            <Text
+              style={{
+                fontSize: 13.5,
+                lineHeight: 22,
+                fontFamily: LilyFonts.sans,
+                color: LilyColors.textBody,
+                marginTop: 8,
+              }}
+            >
+              This permanently removes your past session summaries. It cannot be undone.
             </Text>
 
-            <View className="flex-row gap-3">
-              <Pressable
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+              <TouchableOpacity
                 onPress={() => setConfirmVisible(false)}
-                className="flex-1 h-12 rounded-xl bg-gray-100 items-center justify-center"
+                style={{
+                  flex: 1,
+                  height: 46,
+                  borderRadius: 100,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: LilyColors.surfaceButton,
+                  borderWidth: 1,
+                  borderColor: LilyColors.hairlineBright,
+                }}
               >
-                <Text className="font-semibold text-gray-700">Cancel</Text>
-              </Pressable>
+                <Text
+                  style={{ fontFamily: LilyFonts.sansSemi, fontSize: 14, color: LilyColors.textBody }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
 
-              <Pressable
+              <TouchableOpacity
                 onPress={clearHistory}
-                className="flex-1 h-12 rounded-xl bg-[#019863] items-center justify-center"
+                style={{
+                  flex: 1,
+                  height: 46,
+                  borderRadius: 100,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: LilyColors.danger,
+                }}
               >
-                <Text className="font-semibold text-white">Confirm</Text>
-              </Pressable>
+                <Text
+                  style={{ fontFamily: LilyFonts.sansSemi, fontSize: 14, color: LilyColors.ground }}
+                >
+                  Clear
+                </Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>

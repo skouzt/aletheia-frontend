@@ -1,12 +1,12 @@
-import { ScreenWrapper } from '@/components/screen-wrapper'
-import SettingsScreen from '@/components/Settings'
+import { LilyChrome } from '@/components/lily/LilyChrome';
+import SettingsScreen from '@/components/Settings';
+import { StatusBar } from 'expo-status-bar';
 
-function SettingRoute() {
+export default function Route() {
   return (
-    <ScreenWrapper>
+    <LilyChrome activeTab="space">
+      <StatusBar style="light" />
       <SettingsScreen />
-    </ScreenWrapper>
-  )
+    </LilyChrome>
+  );
 }
-
-export default SettingRoute

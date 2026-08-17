@@ -20,7 +20,7 @@ export default function AuthLayout() {
       <Redirect
         href={
           hasCompletedOnboarding
-            ? "/(tabs)/home"
+            ? "/(chat)"
             : "/(onboarding_form)/personal"
         }
       />

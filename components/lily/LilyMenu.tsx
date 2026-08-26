@@ -168,7 +168,7 @@ export function LilyMenu({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { plan, loading: subLoading } = useSubscription();
+  const { everSubscribed, loading: subLoading } = useSubscription();
 
   // Driven by hand rather than by `SlideInDown`: entering animations inside a Modal
   // can settle a frame short on Android, which left the screen behind peeking out.
@@ -185,10 +185,12 @@ export function LilyMenu({
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));
 
   // Once someone has subscribed, "Lily Unlimited — start your 3-day free trial" is
-  // both wrong and slightly insulting: they already did. Billing lives in Settings →
+  // both wrong and slightly insulting: they already did. That stays true after they
+  // cancel or lapse, which is why this keys off `everSubscribed` rather than the
+  // current plan — a lapsed account reads as plan "none". Billing lives in Settings →
   // Subscription from then on. Hidden while loading so it can't flash in and out.
   const navItems = NAV_ITEMS.filter(
-    (item) => item.key !== 'plan' || (!subLoading && plan === 'none'),
+    (item) => item.key !== 'plan' || (!subLoading && !everSubscribed),
   );
 
   const go = (route: Href) => {

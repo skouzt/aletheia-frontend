@@ -1,6 +1,7 @@
 import { LilyColors, LilyFonts } from "@/constants/lily";
 import { useCheckOnboarding } from "@/hooks/useCheckOnboarding";
 import { useSubscription } from "@/hooks/useSubscription";
+import { hasSeenIntro } from "@/state/intro";
 import { useAuth } from "@clerk/clerk-expo";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ export default function Index() {
 
   const [delayDone, setDelayDone] = useState(false);
   const [initialUrl, setInitialUrl] = useState<string | null>(null);
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -22,6 +24,8 @@ export default function Index() {
     Linking.getInitialURL().then((url) => {
       setInitialUrl(url);
     });
+
+    hasSeenIntro().then(setIntroSeen);
 
     refresh(); 
     return () => clearTimeout(timer);
@@ -33,6 +37,7 @@ export default function Index() {
     isLoading ||
     subLoading ||
     !delayDone ||
+    introSeen === null ||
     hasCompletedOnboarding === null
   ) {
     return (
@@ -71,8 +76,9 @@ export default function Index() {
     return <Redirect href="/payment/result" />;
   }
 
+  // First launch: the three intro screens come before the sign-in wall.
   if (!isSignedIn) {
-    return <Redirect href="/(auth)/auth" />;
+    return <Redirect href={introSeen ? "/(auth)/auth" : "/(intro)"} />;
   }
 
   if (!hasCompletedOnboarding) {

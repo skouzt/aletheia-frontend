@@ -1,4 +1,5 @@
 import { LilyFonts } from '@/constants/lily';
+import LottieView from 'lottie-react-native';
 import React, { useEffect } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -215,5 +216,45 @@ export function LilyGlow({
       </Defs>
       <Ellipse cx={width / 2} cy={height / 2} rx={width / 2} ry={height / 2} fill={`url(#${id})`} />
     </Svg>
+  );
+}
+
+/**
+ * The Welcome screen's illustration: someone sitting with themselves, a hand
+ * arriving. The design doc tints the source art green with a CSS filter chain —
+ * RN has no filters, so `Helping-green.json` is the same Lottie with that chain
+ * baked into its 32 fills. Vector rather than the GIF it replaces, so it stays
+ * sharp at any size and costs 44KB instead of 300.
+ */
+export function LilyHelpingArt() {
+  const rise = useSharedValue(0);
+
+  useEffect(() => {
+    rise.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.quad) });
+  }, [rise]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: rise.value,
+    transform: [{ translateY: interpolate(rise.value, [0, 1], [8, 0]) }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        { width: 260, height: 260, alignItems: 'center', justifyContent: 'center' },
+        style,
+      ]}
+    >
+      <View pointerEvents="none" style={{ position: 'absolute' }}>
+        <LilyGlow width={230} height={230} color="#1F8C58" opacity={0.26} stopAt={0.7} />
+      </View>
+      <LottieView
+        source={require('../../assets/images/Helping-green.json')}
+        autoPlay
+        loop
+        resizeMode="contain"
+        style={{ width: 180, height: 180 }}
+      />
+    </Animated.View>
   );
 }

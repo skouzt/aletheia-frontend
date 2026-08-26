@@ -25,6 +25,13 @@ interface SubscriptionState {
   amount?: number;
   period?: string;
   canStartSession: boolean;
+  /**
+   * Whether this account has ever had a plan — including one that is cancelled,
+   * expired, or past due. The free-trial offer must never be shown to them again:
+   * they already took it, and re-offering it after a cancellation reads as though
+   * the app forgot they were ever a customer.
+   */
+  everSubscribed: boolean;
   loading: boolean;
 }
 
@@ -33,6 +40,7 @@ const EMPTY: SubscriptionState = {
   status: "none",
   isTrialing: false,
   canStartSession: false,
+  everSubscribed: false,
   loading: false,
 };
 
@@ -185,6 +193,9 @@ async function loadSubscription(
         amount: sub.amount,
         period: sub.period,
         canStartSession: deriveCanStartSession(status, sub),
+        // Any status other than "none" means a subscription row exists, whatever
+        // state it is in.
+        everSubscribed: status !== "none" || plan !== "none",
         loading: false,
       });
     } catch (err) {

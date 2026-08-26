@@ -1,4 +1,4 @@
-import { LilyGlow, LilyWelcomeArt } from '@/components/lily/LilyWelcomeArt';
+import { LilyGlow, LilyHelpingArt } from '@/components/lily/LilyWelcomeArt';
 import { LilyColors, LilyFonts, LilyGradients } from '@/constants/lily';
 import { useAuth, useSSO, useSignIn, useSignUp } from '@clerk/clerk-expo';
 import * as AuthSession from 'expo-auth-session';
@@ -243,7 +243,7 @@ const MiraWelcomeScreen = () => {
             marginTop: 20,
           }}
         >
-          Your non-judgmental listening ear.
+          Whenever you’re ready, I’m here.
         </Text>
         <Text
           style={{
@@ -256,8 +256,7 @@ const MiraWelcomeScreen = () => {
             paddingHorizontal: 6,
           }}
         >
-          Lily is always here — immediate, confidential support, without the wait or the worry of
-          being judged.
+          Take your time. Nothing here needs to be figured out first.
         </Text>
       </AnimatedView>
 
@@ -270,32 +269,30 @@ const MiraWelcomeScreen = () => {
           minHeight: 0,
         }}
       >
-        <LilyWelcomeArt />
+        <LilyHelpingArt />
       </View>
 
       <AnimatedView
         style={[animatedButtonStyle, { paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 16) + 18 }]}
       >
-        {/* Trust row */}
+        {/* Trust line — one promise instead of three claims. */}
         <View
           style={{
-            flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 16,
             paddingBottom: 20,
           }}
         >
-          <Text style={{ fontSize: 11.5, fontFamily: LilyFonts.sans, color: LilyColors.textFaint }}>
-            End-to-end private
-          </Text>
-          <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#2B3B33' }} />
-          <Text style={{ fontSize: 11.5, fontFamily: LilyFonts.sans, color: LilyColors.textFaint }}>
-            No waitlist
-          </Text>
-          <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#2B3B33' }} />
-          <Text style={{ fontSize: 11.5, fontFamily: LilyFonts.sans, color: LilyColors.textFaint }}>
-            Free to start
+          <Text
+            style={{
+              fontSize: 11,
+              lineHeight: 17,
+              textAlign: 'center',
+              fontFamily: LilyFonts.sans,
+              color: LilyColors.textFaint,
+            }}
+          >
+            Private by design · You control what Lily remembers
           </Text>
         </View>
 

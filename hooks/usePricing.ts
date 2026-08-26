@@ -1,6 +1,7 @@
 import {
   BASE_PRICING,
   CountryPricing,
+  countryForTimeZone,
   pricingForCountry,
 } from '@/constants/pricing.generated';
 import { BillingInterval, priceFor } from '@/constants/pricing';
@@ -34,20 +35,31 @@ interface ServerPricing {
   trial_days: number;
 }
 
-/** Best guess from the device, used until the server answers. */
+/**
+ * Best guess from the device, used until the server answers.
+ *
+ * Time zone first, locale region second. The time zone tracks where the phone
+ * *is*; the locale region only says what language it was set to, and in India an
+ * English (UK) or English (US) phone is completely ordinary. This previously
+ * returned the first regionCode it found, which made the fallbacks below it
+ * unreachable — a customer in India with a UK-English phone was quoted in pounds,
+ * and the comment claiming otherwise was simply wrong.
+ *
+ * Still only a hint. The server re-resolves from the edge geo header and wins.
+ */
 function deviceCountry(): string | null {
   try {
-    const locales = Localization.getLocales();
-    for (const l of locales) {
+    const tz = Localization.getCalendars()[0]?.timeZone;
+    const fromZone = countryForTimeZone(tz);
+    if (fromZone) return fromZone;
+  } catch {
+    // fall through to the locale
+  }
+
+  try {
+    for (const l of Localization.getLocales()) {
       if (l.regionCode) return l.regionCode.toUpperCase();
     }
-    // An Indian user whose phone language is "English (United States)" reports a
-    // US region code, so currency and time zone are checked before giving up.
-    for (const l of locales) {
-      if (l.currencyCode === 'INR') return 'IN';
-    }
-    const tz = Localization.getCalendars()[0]?.timeZone?.toLowerCase();
-    if (tz === 'asia/kolkata' || tz === 'asia/calcutta') return 'IN';
   } catch {
     return null;
   }

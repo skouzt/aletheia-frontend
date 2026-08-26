@@ -84,8 +84,7 @@
         {
           "photosPermission": "Lily uses your photos so you can share an image in a conversation."
         }
-      ],
-      "expo-speech-recognition"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -94,9 +94,12 @@ export default function SubscriptionScreen() {
   const insets = useSafeAreaInsets();
   const { getToken } = useAuth();
   const sub = useSubscription();
-  const { region } = usePricing();
+  const { region, labelFor } = usePricing();
 
   const [payments, setPayments] = useState<Payment[]>([]);
+  // Which plan a returning subscriber is buying back into. Only reachable when the
+  // old plan has already lapsed, so there is nothing to infer it from.
+  const [resubInterval, setResubInterval] = useState<'monthly' | 'yearly'>('yearly');
   const [cancelling, setCancelling] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
@@ -201,6 +204,9 @@ export default function SubscriptionScreen() {
 
   const hasPlan = sub.plan !== 'none';
   const isCancelled = sub.status === 'cancelled';
+  // Lapsed and back for more: they get a plan picker and a checkout, never the
+  // free-trial offer — that one is spent.
+  const isReturning = !hasPlan && sub.everSubscribed;
   // Yearly is the top plan — there is nothing to change to, so offering "Change plan"
   // would only lead to a checkout for what they already have.
   const canUpgrade = hasPlan && sub.plan === 'monthly' && !isCancelled;
@@ -335,19 +341,61 @@ export default function SubscriptionScreen() {
               }}
             >
               {!hasPlan
-                ? 'Start a plan to keep talking to Lily.'
+                ? isReturning
+                  ? 'Your plan has ended. Pick one up again to keep talking to Lily.'
+                  : 'Start a plan to keep talking to Lily.'
                 : isCancelled
                   ? `Cancelled — you keep access until ${formatDate(sub.expiresAt ?? null) || 'the period ends'}`
                   : `${sub.isTrialing ? 'Trial ends' : 'Next payment'} on ${formatDate(sub.nextBillingDate ?? sub.expiresAt ?? null) || '—'}`}
             </Text>
 
+            {isReturning && (
+              <View style={{ flexDirection: 'row', gap: 7, marginTop: 13 }}>
+                {(['monthly', 'yearly'] as const).map((key) => {
+                  const on = resubInterval === key;
+                  return (
+                    <TouchableOpacity
+                      key={key}
+                      onPress={() => setResubInterval(key)}
+                      style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        paddingVertical: 9,
+                        borderRadius: 100,
+                        backgroundColor: on ? LilyColors.accentWash : '#171717',
+                        borderWidth: 1,
+                        borderColor: on ? LilyColors.accentBorder : 'rgba(255,255,255,0.07)',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11.5,
+                          fontFamily: on ? LilyFonts.sansSemi : LilyFonts.sans,
+                          color: on ? LilyColors.textPrimary : LilyColors.textMuted,
+                        }}
+                      >
+                        {key === 'yearly' ? 'Yearly' : 'Monthly'} · {labelFor(key)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
             <View style={{ flexDirection: 'row', gap: 7, marginTop: 13 }}>
               {(!hasPlan || isCancelled) && (
                 <TouchableOpacity
-                  onPress={() =>
-                    isCancelled ? startCheckout(sub.plan === 'yearly' ? 'yearly' : 'monthly') : router.push('/paywall')
-                  }
-                  style={{ flex: 1, borderRadius: 100, overflow: 'hidden' }}
+                  onPress={() => {
+                    if (isCancelled) {
+                      startCheckout(sub.plan === 'yearly' ? 'yearly' : 'monthly');
+                    } else if (isReturning) {
+                      startCheckout(resubInterval);
+                    } else {
+                      router.push('/paywall');
+                    }
+                  }}
+                  disabled={checkingOut}
+                  style={{ flex: 1, borderRadius: 100, overflow: 'hidden', opacity: checkingOut ? 0.5 : 1 }}
                 >
                   <LinearGradient
                     colors={LilyGradients.signUp}
@@ -358,7 +406,11 @@ export default function SubscriptionScreen() {
                     <Text
                       style={{ fontSize: 11.5, fontFamily: LilyFonts.sansSemi, color: '#DCF3E6' }}
                     >
-                      {isCancelled ? 'Resubscribe' : 'Choose a plan'}
+                      {checkingOut && (isCancelled || isReturning)
+                        ? 'Opening…'
+                        : isCancelled || isReturning
+                          ? 'Resubscribe'
+                          : 'Choose a plan'}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>

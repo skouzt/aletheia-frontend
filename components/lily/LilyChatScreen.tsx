@@ -8,6 +8,7 @@ import {
   formatTime,
   sendMessage,
 } from '@/services/lilyChat';
+import { DictationBar } from '@/components/lily/DictationBar';
 import { useDictation } from '@/hooks/useDictation';
 import { markSummariesStale } from '@/state/summariesFreshness';
 import { useAuth } from '@clerk/clerk-expo';
@@ -758,9 +759,16 @@ export default function LilyChatScreen() {
             alignItems: 'center',
           }}
         >
-          {/* The bar rests at 76% width and grows to full on focus — the design's way
-              of keeping the idle composer quiet. */}
-          <Animated.View
+          {/* A take in progress replaces the input entirely, so there is never a
+              question about whether the mic is open. */}
+          {dictation.state !== 'idle' ? (
+            <View style={{ width: '100%' }}>
+              <DictationBar dictation={dictation} />
+            </View>
+          ) : (
+            /* The bar rests at 76% width and grows to full on focus — the design's way
+               of keeping the idle composer quiet. */
+            <Animated.View
             style={[
               {
                 borderRadius: 26,
@@ -885,28 +893,24 @@ export default function LilyChatScreen() {
                   <TouchableOpacity
                     hitSlop={6}
                     onPress={() => {
-                      if (!dictation.listening) draftBeforeDictation.current = draft.trim();
-                      dictation.toggle();
+                      draftBeforeDictation.current = draft.trim();
+                      dictation.start();
                     }}
                     style={{
                       width: 32,
                       height: 32,
                       borderRadius: 16,
-                      backgroundColor:
-                        dictation.state === 'listening'
-                          ? LilyColors.accent
-                          : dictation.state === 'transcribing'
-                            ? LilyColors.accentWash
-                            : LilyColors.surfaceMic,
+                      backgroundColor: LilyColors.surfaceMic,
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <MicIcon active={dictation.state === 'listening'} />
+                    <MicIcon />
                   </TouchableOpacity>
                 )}
               </View>
-          </Animated.View>
+            </Animated.View>
+          )}
         </View>
       </Animated.View>
 

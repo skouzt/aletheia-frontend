@@ -12,7 +12,7 @@ import { DictationBar } from '@/components/lily/DictationBar';
 import { useDictation } from '@/hooks/useDictation';
 import { markSummariesStale } from '@/state/summariesFreshness';
 import { useAuth } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,9 +28,9 @@ import {
 } from 'react-native';
 import Animated, {
   Easing,
+  useAnimatedKeyboard,
   FadeIn,
   FadeInDown,
-  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -400,12 +400,52 @@ export default function LilyChatScreen() {
 
   const barStyle = useAnimatedStyle(() => ({ width: `${barWidth.value}%` }));
 
-  // Lifts the whole column by the keyboard's height, falling back to the home-indicator
-  // inset when it is closed.
-  const keyboard = useAnimatedKeyboard();
   const bottomInset = Math.max(insets.bottom, 6);
+
+  // Two sources, because neither is sufficient alone.
+  //
+  // `useAnimatedKeyboard` measures correctly: under Android edge-to-edge the
+  // window does not resize, and its height accounts for the navigation-bar inset
+  // that `endCoordinates.height` leaves out. Read that value directly and the
+  // composer lands exactly above the keyboard.
+  //
+  // What it cannot do is forget. This screen is a stack route, so navigating away
+  // leaves it mounted with the last height still in the shared value; on return
+  // that height is still subtracted from a full-height column and the composer
+  // sits marooned mid-screen. The hook is read-only, so nothing here can clear it.
+  //
+  // Hence the flag: the measurement comes from the hook, but it is only applied
+  // while we know the keyboard is genuinely open — and leaving the screen clears
+  // that flag outright, whether or not a hide event ever arrives.
+  const keyboard = useAnimatedKeyboard();
+  const keyboardOpen = useSharedValue(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => {
+      keyboardOpen.value = 1;
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardOpen.value = 0;
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [keyboardOpen]);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        keyboardOpen.value = 0;
+        inputRef.current?.blur();
+        Keyboard.dismiss();
+      };
+    }, [keyboardOpen]),
+  );
+
   const contentStyle = useAnimatedStyle(() => ({
-    paddingBottom: Math.max(keyboard.height.value, bottomInset),
+    paddingBottom:
+      keyboardOpen.value === 1 ? Math.max(keyboard.height.value, bottomInset) : bottomInset,
   }));
 
   // Android's back button hides the keyboard without blurring the input, so `focused`
@@ -582,7 +622,8 @@ export default function LilyChatScreen() {
       {/* The keyboard offset is applied by hand. Under Android edge-to-edge the window
           does not resize, so `KeyboardAvoidingView` either buried the composer (no
           behavior) or failed to unwind its padding on dismiss (behavior="padding").
-          `useAnimatedKeyboard` follows the real inset animation in both directions. */}
+          See `keyboardOpen` above for why the hook's height is gated rather than
+          applied directly. */}
       <Animated.View style={[{ flex: 1 }, contentStyle]}>
         {/* Header — the menu button floats over the left slot, so the title block
             is centred between two equal 34pt reservations. */}

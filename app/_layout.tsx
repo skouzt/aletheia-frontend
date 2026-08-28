@@ -15,6 +15,8 @@ import { useEffect } from "react";
 import { LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { usePushRegistration } from "@/hooks/usePushRegistration";
+
 import "../global.css";
 
 // NativeWind's react-native-css-interop touches `SafeAreaView` off the react-native
@@ -26,6 +28,14 @@ LogBox.ignoreLogs(["SafeAreaView has been deprecated"]);
 WebBrowser.maybeCompleteAuthSession();
 
 SplashScreen.preventAutoHideAsync();
+
+// Registration needs Clerk's session, so it cannot run in RootLayout — that
+// component renders the provider and sits outside it. A leaf inside ClerkLoaded
+// is the first place the hook can see whether anyone is signed in.
+function PushRegistration() {
+  usePushRegistration();
+  return null;
+}
 
 export default function RootLayout() {
   const router = useRouter();
@@ -76,6 +86,7 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ClerkLoaded>
+        <PushRegistration />
         <SafeAreaProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />

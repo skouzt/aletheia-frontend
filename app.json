@@ -39,7 +39,8 @@
         "BLUETOOTH_CONNECT",
         "WAKE_LOCK"
       ],
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -83,6 +84,12 @@
         "expo-image-picker",
         {
           "photosPermission": "Lily uses your photos so you can share an image in a conversation."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#000000"
         }
       ]
     ],

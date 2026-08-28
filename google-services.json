@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "751562187454",
+    "project_id": "lily-2b222",
+    "storage_bucket": "lily-2b222.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:751562187454:android:446e3cd9fa76d6c87534ef",
+        "android_client_info": {
+          "package_name": "com.aletheia.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKZe6DG3j9Nw1Kp4DWu7CwefeBF4zgfKs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

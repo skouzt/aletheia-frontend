@@ -46,3 +46,7 @@ app-example
 
 .env.local
 *.aab
+
+# Firebase service account — never commit (google-services.json is public and fine)
+*-firebase-adminsdk-*.json
+service-account*.json

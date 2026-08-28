@@ -13,20 +13,20 @@ import { clearCache } from '@/state/personalization';
 import { useAuth, useClerk } from '@clerk/clerk-expo';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import * as Notifications from 'expo-notifications';
+import {
+  fetchPreferences,
+  getExistingPushToken,
+  getPushToken,
+  registerDevice,
+  setPreferences,
+  unregisterDevice,
+} from '@/services/pushNotifications';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, TouchableOpacity, Text, View } from 'react-native';
 
 /** Falls back only if expoConfig is somehow unavailable; app.json is the source. */
 const APP_VERSION = Constants.expoConfig?.version ?? '—';
-
-async function requestNotificationPermission(): Promise<boolean> {
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  if (existingStatus === 'granted') return true;
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
-}
 
 function GroupTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -46,7 +46,7 @@ function GroupTitle({ children }: { children: React.ReactNode }) {
 
 export default function SettingsScreen() {
   const { signOut } = useClerk();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const router = useRouter();
   const { plan, status, isTrialing, loading: subLoading } = useSubscription();
 
@@ -73,21 +73,64 @@ export default function SettingsScreen() {
             : 'Not subscribed';
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
+
+  // Clerk hands back a new getToken identity on every render, so it must not sit
+  // in a dependency array.
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
+  // The toggle reflects the server, not this screen's memory. Before, it lived
+  // in useState alone: a user turned notifications on, navigated away, came
+  // back and found it off, while nothing had ever been recorded anywhere.
+  useEffect(() => {
+    let cancelled = false;
+    fetchPreferences(getTokenRef.current)
+      .then((prefs) => {
+        if (!cancelled) setNotificationsEnabled(prefs.enabled);
+      })
+      .catch(() => {
+        // Leave it off rather than showing a state we could not confirm.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [frequency, setFrequency] = useState<'Daily' | 'Weekdays'>('Daily');
   const [showFrequencyOptions, setShowFrequencyOptions] = useState(false);
 
   const handleToggleNotifications = async (value: boolean) => {
-    if (value) {
-      const granted = await requestNotificationPermission();
-      if (!granted) {
-        Alert.alert(
-          'Notifications Disabled',
-          'Please enable notifications from your device settings to receive reminders.',
-        );
-        return;
-      }
-    }
+    if (savingNotifications) return;
+    setSavingNotifications(true);
+
+    // Optimistic: the switch should move under the thumb, not after a round trip.
     setNotificationsEnabled(value);
+
+    try {
+      if (value) {
+        // Permission and registration in one step — turning the toggle on is
+        // meaningless unless this device is actually addressable afterwards.
+        const pushToken = await getPushToken();
+        if (!pushToken) {
+          setNotificationsEnabled(false);
+          Alert.alert(
+            'Notifications are off',
+            'Enable notifications for Lily in your device settings to hear from her.',
+          );
+          return;
+        }
+        await registerDevice(getTokenRef.current, pushToken);
+      }
+
+      const prefs = await setPreferences(getTokenRef.current, value);
+      setNotificationsEnabled(prefs.enabled);
+    } catch {
+      // Put the switch back where it was; nothing was saved.
+      setNotificationsEnabled(!value);
+      Alert.alert('Could not save', 'Please try again in a moment.');
+    } finally {
+      setSavingNotifications(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -96,6 +139,20 @@ export default function SettingsScreen() {
       // already per-user so this is not a correctness fix — it is not leaving a
       // copy of someone's private note on a device they just signed out of.
       if (userId) await clearCache(userId);
+
+      // Detach this device for the same reason. Left registered, Lily would keep
+      // pushing to a phone whose owner signed out — messages landing on a lock
+      // screen that is no longer theirs. Best effort: a failure here must not
+      // trap someone in a session they are trying to leave.
+      try {
+        // Deliberately the non-prompting variant: asking someone to allow
+        // notifications while they are signing out would be absurd.
+        const pushToken = await getExistingPushToken();
+        if (pushToken) await unregisterDevice(getTokenRef.current, pushToken);
+      } catch {
+        // Sign out anyway.
+      }
+
       await signOut();
       Linking.openURL(Linking.createURL('/'));
     } catch (err) {

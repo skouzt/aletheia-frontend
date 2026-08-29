@@ -12,6 +12,7 @@
  */
 
 import Constants from 'expo-constants';
+import * as Localization from 'expo-localization';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -126,4 +127,23 @@ export async function setPreferences(
   });
   if (!res.ok) throw new Error('Failed to update notification preferences');
   return res.json();
+}
+
+/**
+ * Tell the backend which timezone this device is in.
+ *
+ * Sessions cover one local day, and the reaper closes yesterday's while nobody
+ * is online — so the zone has to be stored server-side rather than read from a
+ * request. Sent on launch because people travel, and a stale zone would file a
+ * conversation under the wrong day.
+ */
+export async function reportTimezone(getToken: TokenGetter): Promise<void> {
+  const timezone = Localization.getCalendars()[0]?.timeZone;
+  if (!timezone) return;
+
+  await fetch(`${BASE}/api/v1/users/timezone`, {
+    method: 'PUT',
+    headers: await authHeaders(getToken),
+    body: JSON.stringify({ timezone }),
+  });
 }

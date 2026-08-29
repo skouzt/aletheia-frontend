@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
-import { getPushToken, registerDevice } from '@/services/pushNotifications';
+import { getPushToken, registerDevice, reportTimezone } from '@/services/pushNotifications';
 
 // Foreground behaviour. Without a handler, a notification arriving while the
 // app is open is delivered to code but never shown — which reads as "push is
@@ -68,6 +68,10 @@ export function usePushRegistration() {
     let cancelled = false;
 
     (async () => {
+      // Independent of push: the backend needs this to know where the user's
+      // day ends, whether or not they ever allow notifications.
+      reportTimezone(getTokenRef.current).catch(() => {});
+
       await ensureAndroidChannel();
 
       const pushToken = await getPushToken();

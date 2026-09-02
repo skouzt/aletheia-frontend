@@ -1,6 +1,5 @@
 import { LilyChoiceStep } from '@/components/lily/LilyChoiceStep';
 import { LilyColors, LilyFonts } from '@/constants/lily';
-import { useUser } from '@clerk/clerk-expo';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -12,7 +11,6 @@ const SAFETY_OPTIONS = ['No', 'A few times before', 'Yes, recently'];
 
 export default function SafetyCheck() {
   const router = useRouter();
-  const { user } = useUser();
   const setValue = useOnboardingStore((s) => s.setValue);
 
   const [selectedSafety, setSelectedSafety] = useState('No');
@@ -43,19 +41,13 @@ export default function SafetyCheck() {
       return;
     }
 
-    try {
-      await user?.update({ unsafeMetadata: { onboardingComplete: true } });
-      await user?.reload();
-      router.replace('/loading');
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      Alert.alert(
-        'Almost there!',
-        "Your data was saved but we couldn't complete setup. Please restart the app.",
-        [{ text: 'OK' }],
-      );
-      setIsCompleting(false);
-    }
+    // Onboarding state lives in user_info and the local cache that
+    // submitOnboarding has already written. This used to also set
+    // Clerk unsafeMetadata.onboardingComplete, which nothing anywhere read —
+    // and when that write failed it told people "we couldn't complete setup,
+    // please restart the app" even though their answers were safely saved and
+    // the app would have let them straight in.
+    router.replace('/loading');
   }
 
   return (

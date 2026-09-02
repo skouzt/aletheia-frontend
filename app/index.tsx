@@ -1,3 +1,4 @@
+import { ConnectionRetry } from "@/components/ConnectionRetry";
 import { LilyColors, LilyFonts } from "@/constants/lily";
 import { useCheckOnboarding } from "@/hooks/useCheckOnboarding";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -9,7 +10,7 @@ import { Linking, Text, View } from "react-native";
 
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { hasCompletedOnboarding, isLoading } = useCheckOnboarding();
+  const { hasCompletedOnboarding, isLoading, unreachable, retry } = useCheckOnboarding();
   const { plan, refresh, loading: subLoading } = useSubscription();
 
   const [delayDone, setDelayDone] = useState(false);
@@ -30,6 +31,13 @@ export default function Index() {
     refresh(); 
     return () => clearTimeout(timer);
   }, []);
+
+  // Checked before the loading gate below, which treats a null
+  // hasCompletedOnboarding as "still working" — without this the splash would
+  // sit there forever once the status check has given up.
+  if (unreachable) {
+    return <ConnectionRetry onRetry={retry} />;
+  }
 
   // ✅ LOADING STATE
   if (

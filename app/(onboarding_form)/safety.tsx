@@ -1,5 +1,6 @@
 import { LilyChoiceStep } from '@/components/lily/LilyChoiceStep';
 import { LilyColors, LilyFonts } from '@/constants/lily';
+import { classifyFailure, trackOnboardingCompleted, trackOnboardingFailed } from '@/services/analytics';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -32,6 +33,8 @@ export default function SafetyCheck() {
     const result = await submitOnboarding();
 
     if (!result.success) {
+      // The category only — the error text stays on the device.
+      trackOnboardingFailed(classifyFailure(result.error));
       console.error('Insert failed:', result.error);
       Alert.alert('Oops!', "We couldn't save your information. Please try again.", [
         { text: 'OK' },
@@ -40,6 +43,8 @@ export default function SafetyCheck() {
       setIsCompleting(false);
       return;
     }
+
+    trackOnboardingCompleted();
 
     // Onboarding state lives in user_info and the local cache that
     // submitOnboarding has already written. This used to also set

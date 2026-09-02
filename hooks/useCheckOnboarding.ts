@@ -2,6 +2,8 @@ import { useAuth } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
+import { trackOnboardingCheckUnreachable } from '@/services/analytics';
+
 const CACHE_KEY = (userId: string) => `onboarding_status_${userId}`;
 
 const ATTEMPTS = 3;
@@ -104,6 +106,8 @@ export function useCheckOnboarding() {
       }
 
       if (cancelled) return;
+      // Distinguishes "could not reach us" from "chose to stop" in the funnel.
+      trackOnboardingCheckUnreachable();
       console.error('Onboarding check failed after retries:', lastError);
       setHasCompletedOnboarding(null);
       setUnreachable(true);

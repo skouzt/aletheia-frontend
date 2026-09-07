@@ -70,7 +70,10 @@ export default function PersonalDetails() {
   const [gender, setGender] = useState('');
   const [support, setSupport] = useState('');
 
-  const isFormValid = !!(name && age && gender && support);
+  // Trimmed: without it a name of only spaces passed, and the server — which
+  // now strips — would have stored an empty one.
+  const trimmedName = name.trim();
+  const isFormValid = !!(trimmedName && age && gender && support);
 
   function handleSelect(setter: (v: string) => void, value: string) {
     Haptics.selectionAsync();
@@ -80,7 +83,7 @@ export default function PersonalDetails() {
   function handleContinue() {
     if (!isFormValid) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setValue('name', name);
+    setValue('name', trimmedName);
     setValue('age', age);
     setValue('gender', gender);
     setValue('support_style', support);

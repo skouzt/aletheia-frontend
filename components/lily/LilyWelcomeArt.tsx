@@ -251,7 +251,9 @@ export function LilyHelpingArt() {
       <LottieView
         source={require('../../assets/images/Helping-green.json')}
         autoPlay
-        loop
+        // Plays once and holds on its last frame. LottieView loops by default,
+        // so this has to be explicit rather than just dropping the prop.
+        loop={false}
         resizeMode="contain"
         style={{ width: 180, height: 180 }}
       />

@@ -55,16 +55,11 @@ export function useCheckOnboarding() {
       setIsLoading(true);
       setUnreachable(false);
 
-      // A cached completion is authoritative and needs no network: onboarding
-      // is not something a user can become un-done from.
+      // The cache is a fallback for when the server cannot be reached, not a
+      // substitute for asking. Treating a stored `true` as authoritative meant a
+      // row deleted server-side left the device convinced forever, skipping
+      // onboarding into an app with no profile behind it.
       const cached = await AsyncStorage.getItem(CACHE_KEY(userId));
-      if (cached !== null && JSON.parse(cached) === true) {
-        if (!cancelled) {
-          setHasCompletedOnboarding(true);
-          setIsLoading(false);
-        }
-        return;
-      }
 
       let lastError: unknown = null;
 
@@ -88,11 +83,10 @@ export function useCheckOnboarding() {
           const { completed } = await response.json();
           if (cancelled) return;
 
-          // Only a `true` is worth caching. Caching `false` would pin someone
-          // to the pre-onboarding answer until something else overwrote it.
-          if (completed) {
-            await AsyncStorage.setItem(CACHE_KEY(userId), JSON.stringify(true));
-          }
+          // Both answers are cached now that the cache only serves the offline
+          // path — a stale `false` can no longer strand anyone, because the
+          // server is asked every time it is reachable.
+          await AsyncStorage.setItem(CACHE_KEY(userId), JSON.stringify(Boolean(completed)));
 
           setHasCompletedOnboarding(Boolean(completed));
           setIsLoading(false);
@@ -109,6 +103,16 @@ export function useCheckOnboarding() {
       // Distinguishes "could not reach us" from "chose to stop" in the funnel.
       trackOnboardingCheckUnreachable();
       console.error('Onboarding check failed after retries:', lastError);
+
+      // Unreachable: fall back to whatever we last heard. Someone who has
+      // onboarded should not be sent through it again just because they opened
+      // the app on a train.
+      if (cached !== null) {
+        setHasCompletedOnboarding(JSON.parse(cached) === true);
+        setIsLoading(false);
+        return;
+      }
+
       setHasCompletedOnboarding(null);
       setUnreachable(true);
       setIsLoading(false);

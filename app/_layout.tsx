@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useCheckOnboarding } from "@/hooks/useCheckOnboarding";
 import { usePushRegistration } from "@/hooks/usePushRegistration";
 
 import "../global.css";
@@ -35,6 +36,46 @@ SplashScreen.preventAutoHideAsync();
 function PushRegistration() {
   usePushRegistration();
   return null;
+}
+
+/**
+ * The navigator, with chat gated on having finished onboarding.
+ *
+ * Stack.Protected removes those routes from the navigator entirely when the
+ * guard is false, so a `router.push("/(chat)")` — from a notification tap, its
+ * cold-start equivalent, or the return from checkout — simply has nowhere to
+ * land. Checking inside each destination only bounced people back out after
+ * they had already arrived.
+ *
+ * Lives here rather than in RootLayout because the hook needs Clerk's session,
+ * and RootLayout renders the provider it would have to be inside.
+ */
+function RootNavigator() {
+  const { hasCompletedOnboarding } = useCheckOnboarding();
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(onboarding_form)" />
+      <Stack.Screen name="payment/result" />
+
+      {/* Strictly true: while the answer is still unknown these stay closed,
+          and index.tsx holds the splash until it knows. */}
+      <Stack.Protected guard={hasCompletedOnboarding === true}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(chat)" />
+      </Stack.Protected>
+
+      <Stack.Screen
+        name="(modal)"
+        options={{
+          presentation: "transparentModal",
+          animation: "slide_from_bottom",
+        }}
+      />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
@@ -88,21 +129,7 @@ export default function RootLayout() {
       <ClerkLoaded>
         <PushRegistration />
         <SafeAreaProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(onboarding_form)" />
-            <Stack.Screen name="payment/result" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="(chat)" />
-            <Stack.Screen
-                name="(modal)"
-              options={{
-                presentation: "transparentModal",
-                animation: "slide_from_bottom",
-              }}
-            />
-          </Stack>
+          <RootNavigator />
         </SafeAreaProvider>
       </ClerkLoaded>
     </ClerkProvider>

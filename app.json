@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lily",
     "slug": "app",
-    "version": "2.0.8",
+    "version": "2.0.9",
     "orientation": "portrait",
     "scheme": "aletheia",
     "newArchEnabled": true,

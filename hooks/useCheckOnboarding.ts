@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
 import { trackOnboardingCheckUnreachable } from '@/services/analytics';
+import { useOnboardingStatus } from '@/state/onboardingStatus';
 
 const CACHE_KEY = (userId: string) => `onboarding_status_${userId}`;
 
@@ -28,7 +29,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 export function useCheckOnboarding() {
   const { userId, isLoaded, isSignedIn, getToken } = useAuth();
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
+  // Shared, not local: the root navigator's gate and the screen that satisfies
+  // it live in different parts of the tree.
+  const hasCompletedOnboarding = useOnboardingStatus((s) => s.completed);
+  const setHasCompletedOnboarding = useOnboardingStatus((s) => s.setCompleted);
   const [isLoading, setIsLoading] = useState(true);
   const [unreachable, setUnreachable] = useState(false);
   const [attempt, setAttempt] = useState(0);

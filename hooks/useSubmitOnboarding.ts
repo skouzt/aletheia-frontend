@@ -2,6 +2,7 @@ import { useAuth, useUser } from "@clerk/clerk-expo";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
+import { useOnboardingStatus } from "../state/onboardingStatus";
 import { useOnboardingStore } from "../state/onboardingStore";
 
 const CACHE_KEY = (userId: string) => `onboarding_status_${userId}`;
@@ -68,6 +69,11 @@ export function useSubmitOnboarding() {
       const savedData = await response.json();
 
       await AsyncStorage.setItem(CACHE_KEY(userId), JSON.stringify(true));
+
+      // Opens the gate immediately. Without this the chat route stays removed
+      // from the navigator until the next launch, and the breathing screen that
+      // follows has nowhere to go.
+      useOnboardingStatus.getState().setCompleted(true);
 
       await Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success

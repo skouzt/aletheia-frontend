@@ -9,16 +9,25 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://aletheia-backend.site"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://aletheia-backend.site"
+      }
     },
     "production-apk": {
       "extends": "production",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease" 
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://aletheia-backend.site"
       }
     }
   },
